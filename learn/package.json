@@ -1,0 +1,30 @@
+{
+  "name": "hhvm-field-manual",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "content": "node scripts/gen-content.mjs",
+    "test:hack": "node scripts/test-hack.mjs",
+    "check": "node scripts/gen-content.mjs && node scripts/test-hack.mjs && node scripts/test-bank.mjs && tsx scripts/render-check.mjs",
+    "predev": "node scripts/gen-content.mjs",
+    "dev": "vite --host 0.0.0.0",
+    "prebuild": "node scripts/gen-content.mjs && node scripts/test-hack.mjs && node scripts/test-bank.mjs && tsx scripts/render-check.mjs",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test:render": "tsx scripts/render-check.mjs",
+    "test:bank": "node scripts/test-bank.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "^5.2.5",
+    "lucide-react": "^0.468.0",
+    "marked": "^15.0.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "tsx": "^4.19.2",
+    "vite": "^6.0.7"
+  }
+}
