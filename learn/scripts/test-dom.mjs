@@ -187,6 +187,21 @@ else {
   }
 }
 
+// A manual link inside a step body navigates instead of reloading the page.
+await go("#/learn/hack/getting-started/quick-start/1");
+await wait(30);
+const lessonLink = window.document.querySelector('.sheet-body a[href^="#/"]');
+if (!lessonLink) fail("learn: no in-page link to another lesson");
+else {
+  const href = lessonLink.getAttribute("href");
+  const title = lessonLink.textContent.trim();
+  await click(lessonLink);
+  await wait(60);
+  if (window.location.hash !== href) fail(`learn: in-page link went to ${window.location.hash}, expected ${href}`);
+  else if (!text(".sheet-title")) fail("learn: in-page link left an empty page");
+  else ok(`learn: in-page link "${title}" opens ${text(".sheet-title")}`);
+}
+
 // ---------------------------------------------------------------- exam view
 await go("#/exam");
 await wait(30);
@@ -218,6 +233,13 @@ else {
     } else ok("exam: result saved to history");
   }
 }
+
+// A chapter paper from a URL is built on mount, with the chapter in the title.
+await go("#/exam/chapter/types");
+await wait(120);
+if (!/types/i.test(text(".card .strong") + text(".app"))) fail("exam: chapter paper did not open from the URL");
+else if (all(".option").length < 2) fail("exam: chapter paper has no questions");
+else ok("exam: chapter paper opens from a deep link");
 
 // ---------------------------------------------------------------- playground
 await go("#/playground");
@@ -289,6 +311,18 @@ else {
   const results = all(".palette button, [role=dialog] button").length;
   if (results < 2) fail("palette: typing produced no results");
   else ok(`palette: ${results} results for "nullable"`);
+
+  // Picking a result opens that lesson, not just a highlighted row.
+  const firstResult = all(".palette button, [role=dialog] button").find((button) => /nullable/i.test(button.textContent));
+  const hashBefore = window.location.hash;
+  if (!firstResult) fail("palette: no result mentions nullable");
+  else {
+    await click(firstResult);
+    await wait(60);
+    if (window.location.hash === hashBefore) fail("palette: choosing a result did not navigate");
+    else if (!/Nullable/i.test(text(".sheet-title"))) fail(`palette: the result opened ${text(".sheet-title")}`);
+    else ok(`palette: choosing a result opens ${text(".sheet-title")}`);
+  }
   await act(async () => {
     window.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
   });
