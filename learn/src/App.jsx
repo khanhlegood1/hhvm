@@ -11,8 +11,6 @@ import ExamView from "./views/ExamView.jsx";
 import PlaygroundView from "./views/PlaygroundView.jsx";
 import LibraryView from "./views/LibraryView.jsx";
 
-const REPO = "https://github.com/khanhlegold1/hhvm";
-
 const chaptersById = {};
 for (const track of manual.tracks) {
   for (const chapter of track.chapters) chaptersById[chapter.slug] = chapter;
@@ -91,9 +89,18 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <button type="button" className="ghost icon-only menu-button" onClick={() => setMenuOpen((value) => !value)} aria-label={t("menu")} style={{ display: "none" }}>
-          <Menu size={16} />
-        </button>
+        {view === "learn" && (
+          <button
+            type="button"
+            className="ghost icon-only menu-button"
+            onClick={() => setMenuOpen((value) => !value)}
+            aria-label={t("menu")}
+            aria-expanded={menuOpen}
+            style={{ display: "none" }}
+          >
+            <Menu size={16} />
+          </button>
+        )}
         <a className="brand" href={buildHash("learn")} onClick={(event) => { event.preventDefault(); setView("learn"); }}>
           <span className="brand-mark" aria-hidden="true">HH</span>
           <span>
