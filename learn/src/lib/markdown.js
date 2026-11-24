@@ -12,6 +12,7 @@
 // routes, so a lesson never sends the reader away from the course.
 
 import { marked } from "marked";
+import { codeHash } from "./codeHash.js";
 
 const INTERNAL_CHAPTERS = new Set([
   "FbInfo",
@@ -186,6 +187,33 @@ export const highlight = (code) => {
   return out;
 };
 
+// Code hashes the content generator proved the playground can run. `RUN`
+// prints something, `OPEN` runs cleanly but prints nothing (a class or a
+// function definition): those get an Open button instead, so the site never
+// promises output a snippet cannot produce. Before the sets are loaded,
+// every Hack block is offered, which keeps the site usable on its own.
+const RUN = new Set();
+const OPEN = new Set();
+const loaded = { value: false };
+
+export const setRunnable = (runHashes, openHashes) => {
+  RUN.clear();
+  OPEN.clear();
+  for (const hash of runHashes || []) RUN.add(hash);
+  for (const hash of openHashes || []) OPEN.add(hash);
+  loaded.value = true;
+};
+
+export const codeAction = (code) => {
+  if (!loaded.value) return "run";
+  const hash = codeHash(code);
+  if (RUN.has(hash)) return "run";
+  if (OPEN.has(hash)) return "open";
+  return null;
+};
+
+export const isRunnable = (code) => codeAction(code) !== null;
+
 // `marked` renderer: code fences become the site's own block with a copy
 // button, which React attaches after inserting the HTML.
 const renderer = new marked.Renderer();
@@ -193,12 +221,13 @@ renderer.code = (codeOrToken, language) => {
   const code = typeof codeOrToken === "object" ? codeOrToken.text : codeOrToken;
   const lang = (typeof codeOrToken === "object" ? codeOrToken.lang : language) || "";
   const hack = isHackFence(lang);
+  const action = hack ? codeAction(code) : null;
   const body = hack ? highlight(code) : escapeHtml(code);
   return (
     `<div class="code-block" data-code="${encodeURIComponent(code)}" data-lang="${escapeHtml(lang || "hack")}">` +
     `<div class="code-bar"><span>${escapeHtml(lang || "hack")}</span><span class="spacer"></span>` +
     `<button type="button" data-copy="1">Copy</button>` +
-    (hack ? `<button type="button" data-run="1">Run</button>` : "") +
+    (action ? `<button type="button" data-run="1" data-mode="${action}">${action === "open" ? "Open" : "Run"}</button>` : "") +
     `</div><pre><code>${body}</code></pre></div>`
   );
 };

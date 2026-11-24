@@ -3,6 +3,7 @@ import { BookOpen, GraduationCap, Menu, Moon, Search, Sun, Target, TerminalSquar
 import manual from "./content/manual.json";
 import { LANGS, t as translate } from "./content/strings.js";
 import { prepareIndex } from "./lib/search.js";
+import { setRunnable } from "./lib/markdown.js";
 import { navigate, useHashRoute, buildHash } from "./lib/useHashRoute.js";
 import * as store from "./lib/store.js";
 import CommandPalette from "./components/CommandPalette.jsx";
@@ -21,6 +22,9 @@ for (const track of manual.tracks) {
 }
 
 const INDEX = prepareIndex(manual.index, chaptersById, trackByChapter);
+
+// Only the manual snippets that were proved to run get a Run button.
+setRunnable(manual.runnable, manual.loadable);
 
 const TABS = [
   { id: "learn", icon: BookOpen },

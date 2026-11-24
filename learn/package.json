@@ -6,14 +6,16 @@
   "scripts": {
     "content": "node scripts/gen-content.mjs",
     "test:hack": "node scripts/test-hack.mjs",
-    "check": "node scripts/gen-content.mjs && node scripts/test-hack.mjs && node scripts/test-bank.mjs && tsx scripts/render-check.mjs",
+    "check": "node scripts/gen-content.mjs && node scripts/test-hack.mjs && node scripts/test-bank.mjs && tsx scripts/test-runnable.mjs && tsx scripts/render-check.mjs && tsx scripts/test-dom.mjs",
     "predev": "node scripts/gen-content.mjs",
     "dev": "vite --host 0.0.0.0",
-    "prebuild": "node scripts/gen-content.mjs && node scripts/test-hack.mjs && node scripts/test-bank.mjs && tsx scripts/render-check.mjs",
+    "prebuild": "node scripts/gen-content.mjs && node scripts/test-hack.mjs && node scripts/test-bank.mjs && tsx scripts/test-runnable.mjs && tsx scripts/render-check.mjs && tsx scripts/test-dom.mjs",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test:render": "tsx scripts/render-check.mjs",
-    "test:bank": "node scripts/test-bank.mjs"
+    "test:bank": "node scripts/test-bank.mjs",
+    "test:dom": "tsx scripts/test-dom.mjs",
+    "test:runnable": "tsx scripts/test-runnable.mjs"
   },
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "^5.2.5",
@@ -24,6 +26,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
     "tsx": "^4.19.2",
     "vite": "^6.0.7"
   }

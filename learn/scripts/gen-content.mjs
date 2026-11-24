@@ -12,6 +12,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { runHack } from "../src/lib/hack/interpreter.js";
+import { asProgram, codeHash } from "../src/lib/codeHash.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "../..");
@@ -301,6 +303,38 @@ const splitStepsOf = (steps) =>
     md: step.parts.join("\n\n"),
   }));
 
+// Which code blocks of the manual the playground can actually run.
+//
+// The Run button is only worth showing where it works. Each fenced block is
+// tried in the interpreter and its hash is recorded when the snippet runs
+// cleanly; the renderer checks that list, so the site never offers to run a
+// fragment that would fail.
+const RUNNABLE = new Set(); // runs cleanly and prints something
+const LOADABLE = new Set(); // runs cleanly but prints nothing
+const trySnippet = (code, { strict = false } = {}) => {
+  const hash = codeHash(code);
+  if (RUNNABLE.has(hash) || LOADABLE.has(hash)) return true;
+  let result;
+  try {
+    // The wrapper is what the reader's Run button will actually execute.
+    result = runHack(asProgram(code), { maxSteps: 200000, strict });
+  } catch {
+    return false;
+  }
+  if (!result.ok) return false;
+  // A declaration-only snippet is still worth opening in the playground, but
+  // not worth promising output it will never print.
+  (result.output.trim() ? RUNNABLE : LOADABLE).add(hash);
+  return true;
+};
+
+// A snippet with `$ x = 1` at the top is a transcript of a CLI session, not a
+// program; the surrounding prose is not part of a program either.
+const looksLikeProgram = (code) =>
+  /[;{}]/.test(code) && // prose has none of these
+  !/^\s*\$\s/m.test(code) && // `$ hhvm foo.hack` is a shell transcript
+  !/^[A-Z][a-z]+\s+[a-z]+\s+[a-z]/m.test(code); // ...and neither does a sentence
+
 // Pages that only forward the reader elsewhere make poor lessons on their own.
 const isRedirect = (body) => {
   const text = body.replace(/```[\s\S]*?```/g, "").replace(/^#.*$/gm, "").trim();
@@ -358,6 +392,13 @@ const loadTrack = (track) => {
       const { body: rawBody, frontmatter } = stripFrontmatter(read(path.join(chapterDir, page.name)));
       const { title, body } = takeTitle(rawBody, frontmatter.title || page.slug);
       const steps = splitSteps(stripInternal(body));
+      const snippets = codeBlocks(body);
+      for (const snippet of snippets) {
+        if (looksLikeProgram(snippet)) trySnippet(snippet);
+        // Most manual samples are a body without an entry point; wrap them so
+        // the same code can be offered to the reader.
+        if (looksLikeProgram(snippet)) trySnippet(snippet);
+      }
       const summary = collapse(frontmatter.description || firstParagraph(body) || title, 190);
       const words = body.split(/\s+/).filter(Boolean).length;
       lessons.push({
@@ -370,7 +411,7 @@ const loadTrack = (track) => {
         words,
         readingMinutes: Math.max(2, Math.round(words / 220)),
         steps,
-        code: codeBlocks(body).slice(0, 2),
+        code: snippets.slice(0, 2),
         links: [...new Set(linksOf(body))].slice(0, 8),
         source: rel,
         redirect: isRedirect(body) && chapters.length > 3,
@@ -435,6 +476,10 @@ const output = {
   tracks: tracks.map(({ id, title, summary, chapters }) => ({ id, title, summary, chapters })),
   lessons: Object.fromEntries(lessons.map((lesson) => [lesson.id, lesson])),
   index,
+  // Hashes of the manual snippets the playground can run, so the site only
+  // offers the Run button where it will actually produce output.
+  runnable: [...RUNNABLE],
+  loadable: [...LOADABLE],
   count: {
     chapters: tracks.reduce((sum, track) => sum + track.chapters.length, 0),
     lessons: lessons.length,

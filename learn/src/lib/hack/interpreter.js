@@ -127,17 +127,26 @@ const tokenize = (source) => {
       continue;
     }
     if (source.startsWith("<<<", i)) {
-      const header = source.slice(i).match(/^<<<(['"]?)([A-Za-z_]\w*)\1\r?\n/);
+      // `<<<ID` and `<<<   ID` are both Heredocs; PHP allows space after `<<<`.
+      const header = source.slice(i).match(/^<<<[ \t]*(['"]?)([A-Za-z_]\w*)\1\r?\n/);
       if (!header) throw new HackError("invalid heredoc", line);
       const marker = header[2];
+      // Nowdoc (`<<<'ID'`) keeps `$var` literal; heredoc interpolates it.
+      const interpolate = header[1] !== "'";
       const after = i + header[0].length;
       const close = source.slice(after).search(new RegExp(`\\n[ \\t]*${marker};?`));
       if (close === -1) throw new HackError(`unterminated heredoc ${marker}`, line);
       const body = source.slice(after, after + close);
       line += (body.match(/\n/g) || []).length + 1;
-      push("string", body, { interp: true });
-      const rest = source.slice(after + close + 1).match(new RegExp(`[ \\t]*${marker};?`));
+      push("string", body, { interp: interpolate });
+      const rest = source.slice(after + close + 1).match(new RegExp(`[ \\t]*${marker}`));
       i = after + close + 1 + rest[0].length;
+      // The `;` after the marker ends the statement; keep it as a token so
+      // `$x = <<<ID ... ID;` parses like any other assignment.
+      if (source[i] === ";") {
+        push("punct", ";");
+        i += 1;
+      }
       continue;
     }
     if (ch === "'") {
@@ -3877,6 +3886,8 @@ const formatFatal = (error, source, filename = "main.hack") => {
  * @param {boolean} [options.noEntryPoint] Do not call `main` after the script body.
  * @returns {{ok: boolean, output: string, error: ?{message: string, line: number, className: string}, fatal: string, ms: number, steps: number}}
  */
+export { tokenize };
+
 export function runHack(source, options = {}) {
   const started = typeof performance !== "undefined" ? performance.now() : Date.now();
   const interpreter = new Interpreter(source, options);

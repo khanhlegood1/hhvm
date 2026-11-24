@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { EXERCISES } from "../content/exercises.js";
 import { runHack } from "../lib/hack/interpreter.js";
+import { asProgram } from "../lib/codeHash.js";
 import { highlight } from "../lib/markdown.js";
 import { navigate } from "../lib/useHashRoute.js";
 import * as store from "../lib/store.js";
@@ -217,7 +218,9 @@ export default function PlaygroundView({ manual, route, t, lang, chaptersById })
     const injected = sessionStorage.getItem("hhvm-pg-code");
     if (injected) {
       sessionStorage.removeItem("hhvm-pg-code");
-      return injected;
+      // A fragment typed in a lesson becomes a program here, the same wrapper
+      // the content generator ran when it decided to offer the Run button.
+      return asProgram(injected);
     }
     return exercise ? store.getDraft(exercise.id) || exercise.starter : template.code;
   });

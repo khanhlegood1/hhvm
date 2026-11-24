@@ -14,11 +14,11 @@ import {
   Target,
 } from "lucide-react";
 import { navigate } from "../lib/useHashRoute.js";
-import { renderMarkdown } from "../lib/markdown.js";
+import { codeAction, isRunnable } from "../lib/markdown.js";
 import * as store from "../lib/store.js";
 import Markdown from "../components/Markdown.jsx";
 
-const TRACK_TONES = { hack: "#c9dced", hhvm: "#f0c9a4" };
+const TRACK_TONES = { hack: "var(--tone-blue)", hhvm: "var(--tone-orange)" };
 
 const StepDots = ({ steps, current, doneThrough, onPick }) => (
   <div className="dots" role="tablist" aria-label="steps">
@@ -115,7 +115,10 @@ export default function LearnView({ manual, route, t, lang, menuOpen, setMenuOpe
   const relatedLessons = lesson.links.map((id) => manual.lessons[id]).filter(Boolean);
 
   const stepDone = (index) => index < stepIndex;
-  const codeSnippet = lesson.code[0];
+  // Only offer the hand-off when the playground can open the snippet, and say
+  // "Run" only when it prints something.
+  const codeSnippet = lesson.code.find((snippet) => isRunnable(snippet));
+  const snippetPrints = codeSnippet ? codeAction(codeSnippet) === "run" : false;
 
   return (
     <div className="learn">
@@ -229,7 +232,7 @@ export default function LearnView({ manual, route, t, lang, menuOpen, setMenuOpe
             {lesson.redirect && <span className="pill warn">{t("pointers")}</span>}
             {codeSnippet && (
               <button type="button" className="ghost tiny" onClick={() => onOpenPlayground(codeSnippet)}>
-                <Play size={12} /> {t("runInPlayground")}
+                <Play size={12} /> {t(snippetPrints ? "runInPlayground" : "openInPlayground")}
               </button>
             )}
           </div>

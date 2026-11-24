@@ -218,6 +218,18 @@ function main(): void {
 }`,
     stop: /steps/,
   },
+  {
+    name: "heredoc with space after <<<",
+    code: `<?hh
+function main(): void {
+  $var = 42;
+  $s = <<<   ID
+Wow, look at this text! $var
+ID;
+  echo $s;
+}`,
+    out: "Wow, look at this text! 42",
+  },
 ];
 
 const only = process.argv.includes("--manual");
