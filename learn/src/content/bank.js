@@ -10,7 +10,6 @@
 //   concept  one right option out of several
 //   predict  read the snippet, choose the output
 //   fill     complete the snippet with the right line
-//   order    put the steps of a mechanism in order
 
 const q = (entry) => entry;
 
@@ -1903,4 +1902,4 @@ function main(): void {
   }),
 ];
 
-export const EXAM_KINDS = ["concept", "predict", "fill", "order"];
+export const EXAM_KINDS = ["concept", "predict", "fill"];
