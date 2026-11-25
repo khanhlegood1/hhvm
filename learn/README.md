@@ -16,8 +16,8 @@ npm run build    # static site in learn/dist
 | Tab | What it does |
 | --- | --- |
 | **Learn** | 208 lessons in 29 chapters (Hack + HHVM), split into 967 guided steps. Three panes: course tree, the page itself, and a per-step guide. Progress, resume and deep links (`#/learn/hack/types/nullable-types/3`) live in `localStorage`. |
-| **Exam** | A 31-question bank with a timer, scoring and history. Quick paper (10 min, 10 random questions), full paper (whole bank) or a paper for one chapter. Pass mark 70%. |
-| **Playground** | A small Hack-subset interpreter written in JavaScript — **not HHVM**. Vectors, dicts, keysets, classes, interfaces, enums, exceptions, lambdas, pipes. Twelve graded exercises, plus a *Run* button on most code blocks in the manual. |
+| **Exam** | A 114-question bank covering all 29 chapters, with a timer, scoring and history. Quick paper (10 min, 10 random questions), full paper (whole bank) or a paper for one chapter. Pass mark 70%. |
+| **Playground** | A small Hack-subset interpreter written in JavaScript — **not HHVM**. Vectors, dicts, keysets, classes, interfaces, traits, enums, generics, exceptions, lambdas, `match`, generators, pipes — with `vec`/`dict`/`keyset` value semantics. Twelve graded exercises, plus a *Run* button on the code blocks the interpreter can actually run. |
 | **Library** | Search over every concept in the manual, diacritic-folded, so `bien` finds `biến` and `vec` finds `Vector`. |
 
 Vietnamese is the default language; the EN/VI button and the light/dark button
