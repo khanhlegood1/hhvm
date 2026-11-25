@@ -97,6 +97,14 @@ if (BANK.length >= 20 && mostCommon > BANK.length * 0.4) {
   fail("answer-positions", `too many answers sit at one position: ${JSON.stringify(positions)}`);
 }
 
+// A paper per chapter is offered for every chapter with questions; one question
+// does not make a paper.
+const perChapter = {};
+for (const question of BANK) perChapter[question.chapter] = (perChapter[question.chapter] || 0) + 1;
+for (const [chapter, count] of Object.entries(perChapter)) {
+  if (count < 2) fail(chapter, `needs at least two questions to make a paper, has ${count}`);
+}
+
 // Every chapter that has questions should exist in the manual.
 const chapters = new Set(
   manual.tracks.flatMap((track) => track.chapters.map((chapter) => chapter.slug)),
