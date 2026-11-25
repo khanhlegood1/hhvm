@@ -1770,6 +1770,15 @@ class HClass {
   }
 }
 
+// Hack's vec/dict/keyset are value types: every assignment, argument and
+// return hands over a copy. Objects are handles, so they stay shared.
+const copyValue = (value) => {
+  if (value instanceof HVec) return new HVec(value.items.map(copyValue));
+  if (value instanceof HDict) return new HDict(value.entries().map(([key, item]) => [key, copyValue(item)]));
+  if (value instanceof HKeyset) return new HKeyset(value.items().map(copyValue));
+  return value;
+};
+
 class HEnum {
   constructor(name, cases) {
     this.name = name;
@@ -2449,7 +2458,7 @@ class Interpreter {
           scope[target.name].value = value;
           return value;
         }
-        scope[target.name] = value;
+        scope[target.name] = copyValue(value);
         return value;
       case "Index":
         return this.assignIndex(target, value, scope, env);
@@ -3267,9 +3276,9 @@ class Interpreter {
       }
       const value = this.eval(arg.value, scope, env);
       if (arg.spread) {
-        values.push(...this.toItems(value));
+        values.push(...this.toItems(value).map(copyValue));
       } else {
-        values.push(value);
+        values.push(copyValue(value));
       }
     }
     return values;

@@ -81,6 +81,18 @@ for (const question of BANK) {
   }
 }
 
+// A paper where the right answer is always in the same place can be beaten
+// without reading the code. Fail when one position holds too many answers.
+const positions = {};
+for (const question of BANK) {
+  const letter = "ABCDE"[question.answer];
+  positions[letter] = (positions[letter] || 0) + 1;
+}
+const mostCommon = Math.max(...Object.values(positions));
+if (BANK.length >= 20 && mostCommon > BANK.length * 0.4) {
+  fail("answer-positions", `too many answers sit at one position: ${JSON.stringify(positions)}`);
+}
+
 // Every chapter that has questions should exist in the manual.
 const chapters = new Set(
   manual.tracks.flatMap((track) => track.chapters.map((chapter) => chapter.slug)),
@@ -94,6 +106,7 @@ for (const question of BANK) {
 const byChapter = {};
 for (const question of BANK) byChapter[question.chapter] = (byChapter[question.chapter] || 0) + 1;
 console.log(`${BANK.length} questions in the bank`);
+console.log(`  answers by position: ${Object.entries(positions).sort().map(([letter, count]) => `${letter}=${count}`).join(" ")}`);
 for (const [chapter, count] of Object.entries(byChapter).sort()) {
   console.log(`  ${String(count).padStart(2)}  ${chapter}`);
 }

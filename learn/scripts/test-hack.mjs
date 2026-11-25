@@ -218,6 +218,27 @@ function main(): void {
     stop: /steps/,
   },
   {
+    name: "vec and dict are value types",
+    code: `<?hh
+function add_one(vec<int> $v): void {
+  $v[] = 9;
+}
+
+function main(): void {
+  $x = vec[1, 2];
+  $y = $x;
+  $y[] = 3;
+  echo count($x), "/", count($y), "\\n";
+  add_one($x);
+  echo count($x), "\\n";
+  $d = dict["a" => 1];
+  $e = $d;
+  $e["b"] = 2;
+  echo count($d), "/", count($e);
+}`,
+    out: "2/3\n2\n1/2",
+  },
+  {
     name: "match expressions",
     code: `<?hh
 function label(int $n): string {

@@ -27,8 +27,8 @@ export const BANK = [
 function main(): void {
   echo "a", 1 + 2, "b";
 }`,
-    options: ["a3b", "a 3 b", "a1 + 2b", "a12b"],
-    answer: 0,
+    options: ["a12b","a3b","a 3 b","a1 + 2b"],
+    answer: 1,
     explanation: {
       vi: "`echo` nhận nhiều biểu thức, cách nhau bởi dấu phẩy, và in chúng liền nhau. Nó không thêm dấu cách hay xuống dòng.",
       en: "`echo` takes several comma-separated expressions and prints them with nothing in between. It adds no spaces and no newline.",
@@ -65,8 +65,8 @@ function main(): void {
 function main(): void {
   echo 7 / 2, " ", 7 % 2, " ", 7 . 2;
 }`,
-    options: ["3.5 1 72", "3 1 72", "3.5 1 9", "3.5 0.5 72"],
-    answer: 0,
+    options: ["3.5 0.5 72","3 1 72","3.5 1 72","3.5 1 9"],
+    answer: 2,
     explanation: {
       vi: "`/` luôn cho số thực, `%` là phần dư nguyên, còn `.` là nối chuỗi nên `7 . 2` thành `\"72\"`.",
       en: "`/` always yields a float, `%` is the integer remainder, and `.` concatenates, so `7 . 2` is `\"72\"`.",
@@ -86,8 +86,8 @@ function main(): void {
   echo $a == $b ? "loose" : "different", " ";
   echo $a === $b ? "strict" : "types differ";
 }`,
-    options: ["loose strict", "loose types differ", "different types differ", "different strict"],
-    answer: 1,
+    options: ["different strict","different types differ","loose types differ","loose strict"],
+    answer: 2,
     explanation: {
       vi: "`==` so sánh sau khi đổi kiểu nên `\"1\" == 1` đúng. `===` đòi cả kiểu nên chuỗi và số nguyên khác nhau.",
       en: "`==` compares after converting types, so `\"1\" == 1` holds. `===` also compares the type, so a string and an int differ.",
@@ -125,8 +125,8 @@ function main(): void {
   $v[] = 4;
   echo count($v), " ", $v[0], $v[3];
 }`,
-    options: ["3 14", "4 14", "4 41", "3 41"],
-    answer: 1,
+    options: ["4 41","3 41","3 14","4 14"],
+    answer: 3,
     explanation: {
       vi: "`$v[] = 4` thêm vào cuối, nên vec có bốn phần tử; phần tử đầu là `1`, phần tử thứ tư là `4`.",
       en: "`$v[] = 4` appends, so the vec holds four items; the first is `1` and the fourth is `4`.",
@@ -214,8 +214,8 @@ function greet(string $name, string $greeting = "Hi"): string {
 function main(): void {
   echo greet("Ada"), "|", greet("Ada", "Hello");
 }`,
-    options: ["Hi, Ada|Hello, Ada", "Hi, Ada|Hi, Ada", "Hello, Ada|Hello, Ada", "Lỗi thiếu tham số"],
-    answer: 0,
+    options: ["Hi, Ada|Hi, Ada","Hello, Ada|Hello, Ada","Lỗi thiếu tham số","Hi, Ada|Hello, Ada"],
+    answer: 3,
     explanation: {
       vi: "Tham số có giá trị mặc định được bỏ qua khi gọi; giá trị thứ hai thay thế mặc định.",
       en: "A parameter with a default can be left out; the second call replaces the default.",
@@ -258,8 +258,8 @@ function sum(int $n): int {
 function main(): void {
   echo sum(3);
 }`,
-    options: ["6", "3", "0", "Vòng lặp vô hạn"],
-    answer: 0,
+    options: ["Vòng lặp vô hạn","6","0","3"],
+    answer: 1,
     explanation: {
       vi: "`sum(3) = 3 + 2 + 1 + 0`. Điều kiện dừng ở `$n === 0` chặn đệ quy.",
       en: "`sum(3) = 3 + 2 + 1 + 0`. The base case at `$n === 0` stops the recursion.",
@@ -366,8 +366,8 @@ function main(): void {
   echo $s instanceof Shape ? "yes" : "no", " ";
   echo $s instanceof Square ? "yes" : "no";
 }`,
-    options: ["yes yes", "yes no", "no yes", "no no"],
-    answer: 0,
+    options: ["no no","no yes","yes no","yes yes"],
+    answer: 3,
     explanation: {
       vi: "`instanceof` đúng với cả lớp thật và interface mà lớp đó hiện thực.",
       en: "`instanceof` is true for the class and for any interface the class implements.",
@@ -382,8 +382,8 @@ function main(): void {
     kind: "concept",
     level: 1,
     text: { vi: "`?string` nghĩa là gì?", en: "What does `?string` mean?" },
-    options: ["Chỉ chuỗi, không bao giờ null", "`string` hoặc `null`", "Chuỗi tuỳ chọn (optional) trong shape", "Một chuỗi rỗng"],
-    answer: 1,
+    options: ["`string` hoặc `null`","Chuỗi tuỳ chọn (optional) trong shape","Một chuỗi rỗng","Chỉ chuỗi, không bao giờ null"],
+    answer: 0,
     explanation: {
       vi: "`?T` là viết tắt của `T | null`. Phải kiểm tra `null` trước khi dùng như `string`.",
       en: "`?T` is shorthand for `T | null`. Check for `null` before using the value as a `string`.",
@@ -401,8 +401,8 @@ function main(): void {
   $p = shape('x' => 1, 'y' => 2);
   echo $p['x'], " ", $p['z'] ?? -1;
 }`,
-    options: ["1 -1", "1 null", "1 Lỗi", "Lỗi: shape không có khoá z"],
-    answer: 0,
+    options: ["1 null","Lỗi: shape không có khoá z","1 -1","1 Lỗi"],
+    answer: 2,
     explanation: {
       vi: "Shape đọc như dict. Khoá không có trong shape là lỗi khi đọc trực tiếp, nhưng `??` trả về `-1`.",
       en: "A shape reads like a dict. A missing field is an error when read directly, but `??` yields `-1`.",
@@ -446,8 +446,8 @@ enum Color: string {
 function main(): void {
   echo Color::Red, " ", Color::Green;
 }`,
-    options: ["Red Green", "red green", "Color::Red Color::Green", "0 1"],
-    answer: 1,
+    options: ["0 1","Red Green","Color::Red Color::Green","red green"],
+    answer: 3,
     explanation: {
       vi: "Với enum có nền `string`, `Color::Red` là chính chuỗi `'red'`, nên in ra chữ thường.",
       en: "For a string-backed enum, `Color::Red` is the string `'red'`, so the lowercase value prints.",
@@ -495,8 +495,8 @@ async function main(): Promise<void> {
   $value = ____ fetchIt();
   echo $value + 1;
 }`,
-    options: ["await", "yield", "async", "return"],
-    answer: 0,
+    options: ["yield","return","async","await"],
+    answer: 3,
     explanation: {
       vi: "`await` lấy giá trị từ `Awaitable`. Bên trong `async` function, nó tạm dừng hàm đó chứ không chặn VM.",
       en: "`await` takes the value out of an `Awaitable`. Inside an `async` function it suspends that function, not the VM.",
@@ -610,8 +610,8 @@ async function main(): Promise<void> {
     kind: "concept",
     level: 2,
     text: { vi: "File nào đánh dấu gốc của một project Hack?", en: "Which file marks the root of a Hack project?" },
-    options: ["`.hhconfig`", "`hhvm.ini`", "`hack.json`", "`composer.json`"],
-    answer: 0,
+    options: ["`composer.json`","`hack.json`","`.hhconfig`","`hhvm.ini`"],
+    answer: 2,
     explanation: {
       vi: "Tạo `.hhconfig` ở thư mục gốc; type checker và LSP dùng nó để biết project bắt đầu từ đâu.",
       en: "Create `.hhconfig` at the project root; the type checker and the LSP use it to know where the project starts.",
@@ -633,8 +633,8 @@ function main(): void {
     |> Vec\\filter($$, $x ==> $x > 3);
   echo implode(",", $r);
 }`,
-    options: ["3,6,9", "6,9", "6", "1,2,3"],
-    answer: 1,
+    options: ["6","3,6,9","1,2,3","6,9"],
+    answer: 3,
     explanation: {
       vi: "`$$` nhận giá trị của bước trước. Nhân ba được `3, 6, 9`; lọc lớn hơn 3 còn `6, 9`.",
       en: "`$$` carries the previous value. Tripling gives `3, 6, 9`; keeping what is above 3 leaves `6, 9`.",
@@ -661,8 +661,8 @@ function main(): void {
       echo "many";
   }
 }`,
-    options: ["two", "two many", "one", "many"],
-    answer: 0,
+    options: ["many","two","two many","one"],
+    answer: 1,
     explanation: {
       vi: "`case 2` khớp và `break` kết thúc switch, nên `default` không chạy. Thiếu `break` sẽ rơi xuống nhánh sau.",
       en: "`case 2` matches and `break` leaves the switch, so `default` does not run. Without `break`, execution falls through.",
@@ -685,15 +685,15 @@ function main(): void {
     echo " finally";
   }
 }`,
-    options: ["caught boom finally", "caught boom", "finally", "caught Exception finally"],
-    answer: 0,
+    options: ["caught boom","caught Exception finally","caught boom finally","finally"],
+    answer: 2,
     explanation: {
       vi: "`catch` bắt lỗi và in thông báo; `finally` luôn chạy sau cùng, dù có lỗi hay không.",
       en: "`catch` handles the error and prints its message; `finally` always runs afterwards.",
     },
   }),
   q({
-    id: "q1-source-code-fundamentals",
+    id: "scope-blocks",
     chapter: "source-code-fundamentals",
     lesson: "hack/source-code-fundamentals/scope",
     kind: "predict",
@@ -715,21 +715,21 @@ function main(): void {
     },
   }),
   q({
-    id: "q2-source-code-fundamentals-constants",
+    id: "constants-once",
     chapter: "source-code-fundamentals",
     lesson: "hack/source-code-fundamentals/constants",
     kind: "concept",
     level: 2,
     text: { vi: "Hằng số khai báo bằng `const` khác biến ở điểm nào?", en: "How is a constant declared with `const` different from a variable?" },
-    options: ["Phải gán một lần, không đổi được sau đó","Chỉ dùng được trong class","Không có kiểu","Chỉ tồn tại lúc biên dịch"],
-    answer: 0,
+    options: ["Chỉ dùng được trong class","Phải gán một lần, không đổi được sau đó","Không có kiểu","Chỉ tồn tại lúc biên dịch"],
+    answer: 1,
     explanation: {
       vi: "`const` gán đúng một lần; đọc lại thì được, gán lại thì lỗi. Biến `$x` thì đổi được bất cứ lúc nào.",
       en: "A `const` is assigned once; reading it later is fine, assigning it again is an error. A `$x` variable can change at any time.",
     },
   }),
   q({
-    id: "q3-statements",
+    id: "switch-fallthrough",
     chapter: "statements",
     lesson: "hack/statements/switch",
     kind: "predict",
@@ -750,15 +750,15 @@ function main(): void {
       echo "other";
   }
 }`,
-    options: ["two three ","two ","one two three ","other"],
-    answer: 0,
+    options: ["two ","other","one two three ","two three "],
+    answer: 3,
     explanation: {
       vi: "`switch` rơi xuống các `case` phía sau cho tới khi gặp `break`. `case 2` khớp nên in `two `, rồi rơi tiếp vào `case 3`.",
       en: "`switch` falls through to the following cases until a `break`. `case 2` matches, prints `two `, then falls into `case 3`.",
     },
   }),
   q({
-    id: "q4-statements",
+    id: "do-while-count",
     chapter: "statements",
     lesson: "hack/statements/do",
     kind: "predict",
@@ -780,7 +780,7 @@ function main(): void {
     },
   }),
   q({
-    id: "q5-arrays-and-collections",
+    id: "keyset-duplicates",
     chapter: "arrays-and-collections",
     lesson: "hack/arrays-and-collections/vec-keyset-and-dict",
     kind: "predict",
@@ -791,15 +791,15 @@ function main(): void {
   $k = keyset[1, 1, 2];
   echo count($k);
 }`,
-    options: ["2","3","1","Lỗi: keyset không nhận số"],
-    answer: 0,
+    options: ["3","1","2","Lỗi: keyset không nhận số"],
+    answer: 2,
     explanation: {
       vi: "`keyset` là tập hợp: mỗi giá trị chỉ giữ một lần, nên `1, 1, 2` còn hai phần tử.",
       en: "A `keyset` is a set: each value is kept once, so `1, 1, 2` has two members.",
     },
   }),
   q({
-    id: "q6-arrays-and-collections",
+    id: "dict-iteration",
     chapter: "arrays-and-collections",
     lesson: "hack/arrays-and-collections/vec-keyset-and-dict",
     kind: "predict",
@@ -822,10 +822,10 @@ function main(): void {
     },
   }),
   q({
-    id: "q7-arrays-and-collections",
+    id: "vec-copy-on-assign",
     chapter: "arrays-and-collections",
     lesson: "hack/arrays-and-collections/vec-keyset-and-dict",
-    kind: "concept",
+    kind: "predict",
     level: 2,
     text: { vi: "Gán `$y = $x` với `$x` là `vec` thì điều gì xảy ra khi sửa `$y`?", en: "With `$x` a `vec`, what happens to `$x` when you modify `$y = $x`?" },
     code: `<?hh
@@ -835,15 +835,15 @@ function main(): void {
   $y[] = 3;
   echo count($x);
 }`,
-    options: ["2","3","0","Lỗi: vec không gán được"],
-    answer: 0,
+    options: ["3","Lỗi: vec không gán được","0","2"],
+    answer: 3,
     explanation: {
       vi: "`vec` là kiểu giá trị: phép gán sao chép. Thêm phần tử vào `$y` không đụng tới `$x`.",
       en: "`vec` is a value type: assignment copies. Appending to `$y` leaves `$x` alone.",
     },
   }),
   q({
-    id: "q8-functions",
+    id: "default-parameter",
     chapter: "functions",
     lesson: "hack/functions/introduction",
     kind: "predict",
@@ -864,7 +864,7 @@ function main(): void {
     },
   }),
   q({
-    id: "q9-functions",
+    id: "variadic-sum",
     chapter: "functions",
     lesson: "hack/functions/introduction",
     kind: "predict",
@@ -887,7 +887,7 @@ function main(): void {
     },
   }),
   q({
-    id: "q10-classes",
+    id: "static-property-lifetime",
     chapter: "classes",
     lesson: "hack/classes/methods",
     kind: "predict",
@@ -904,15 +904,15 @@ function main(): void {
   Counter::bump();
   echo Counter::bump();
 }`,
-    options: ["2","1","0","Lỗi: self không dùng được"],
-    answer: 0,
+    options: ["0","Lỗi: self không dùng được","2","1"],
+    answer: 2,
     explanation: {
       vi: "Thuộc tính static thuộc về lớp, không thuộc về đối tượng: lần gọi thứ hai thấy `$n` đã là 1 nên trả về 2.",
       en: "A static property belongs to the class, not an object: the second call sees `$n` already at 1 and returns 2.",
     },
   }),
   q({
-    id: "q11-classes",
+    id: "abstract-subclass",
     chapter: "classes",
     lesson: "hack/classes/inheritance",
     kind: "predict",
@@ -927,18 +927,18 @@ class Square extends Shape {
   public function area(): float { return $this->side * $this->side; }
 }
 function main(): void {
-  $s = new Square(3.0);
+  $s = new Square(2.0);
   echo $s->area();
 }`,
-    options: ["9","3","6","Lỗi: lớp abstract không tạo được"],
-    answer: 0,
+    options: ["6","Lỗi: lớp abstract không tạo được","2","4"],
+    answer: 3,
     explanation: {
-      vi: "`Square` cài đặt `area()`, nên `new Square(3.0)` hợp lệ; 3×3 là 9. Lớp `abstract` không tạo trực tiếp được, nhưng lớp con cụ thể thì được.",
-      en: "`Square` implements `area()`, so `new Square(3.0)` is allowed and 3×3 is 9. The abstract class itself cannot be instantiated, its concrete subclass can.",
+      vi: "`Square` cài đặt `area()`, nên `new Square(2.0)` hợp lệ; 2×2 là 4. Lớp `abstract` không tạo trực tiếp được, nhưng lớp con cụ thể thì được.",
+      en: "`Square` implements `area()`, so `new Square(2.0)` is allowed and 2×2 is 4. The abstract class itself cannot be instantiated, its concrete subclass can.",
     },
   }),
   q({
-    id: "q12-traits-and-interfaces",
+    id: "trait-method",
     chapter: "traits-and-interfaces",
     lesson: "hack/traits-and-interfaces/using-a-trait",
     kind: "predict",
@@ -954,29 +954,29 @@ class Uses {
 function main(): void {
   echo (new Uses())->say();
 }`,
-    options: ["trait","Lỗi: Uses không có say()","Says","rỗng"],
-    answer: 0,
+    options: ["rỗng","trait","Lỗi: Uses không có say()","Says"],
+    answer: 1,
     explanation: {
       vi: "`use Says;` chép thân phương thức vào lớp, nên `Uses` có `say()` như thể tự viết.",
       en: "`use Says;` copies the method body into the class, so `Uses` has `say()` as if it had written it.",
     },
   }),
   q({
-    id: "q13-traits-and-interfaces",
+    id: "interface-vs-trait",
     chapter: "traits-and-interfaces",
     lesson: "hack/traits-and-interfaces/implementing-an-interface",
     kind: "concept",
     level: 2,
     text: { vi: "Interface khác trait ở điểm cốt lõi nào?", en: "What is the essential difference between an interface and a trait?" },
-    options: ["Interface chỉ là hợp đồng, trait mang theo thân phương thức","Interface nhanh hơn","Trait chỉ dùng cho static","Không khác gì"],
-    answer: 0,
+    options: ["Interface nhanh hơn","Không khác gì","Interface chỉ là hợp đồng, trait mang theo thân phương thức","Trait chỉ dùng cho static"],
+    answer: 2,
     explanation: {
       vi: "Interface chỉ nói lớp phải có gì; trait cho mượn luôn phần cài đặt.",
       en: "An interface only states what a class must provide; a trait lends the implementation itself.",
     },
   }),
   q({
-    id: "q14-generics",
+    id: "generic-inference",
     chapter: "generics",
     lesson: "hack/generics/introduction",
     kind: "predict",
@@ -989,15 +989,15 @@ function first<T>(vec<T> $v): ?T {
 function main(): void {
   echo first(vec["x", "y"]);
 }`,
-    options: ["x","y","null","Lỗi: T không xác định"],
-    answer: 0,
+    options: ["null","y","x","Lỗi: T không xác định"],
+    answer: 2,
     explanation: {
       vi: "`T` được suy ra từ đối số là `string`, và `$v[0]` là `\"x\"`.",
       en: "`T` is inferred as `string` from the argument, and `$v[0]` is `\"x\"`.",
     },
   }),
   q({
-    id: "q15-readonly",
+    id: "readonly-property",
     chapter: "readonly",
     lesson: "hack/readonly/introduction",
     kind: "predict",
@@ -1011,15 +1011,15 @@ function main(): void {
   $p = new Point(4);
   echo $p->x;
 }`,
-    options: ["4","Lỗi: readonly không đọc được","0","null"],
-    answer: 0,
+    options: ["null","0","4","Lỗi: readonly không đọc được"],
+    answer: 2,
     explanation: {
       vi: "`readonly` cấm ghi sau khi khởi tạo, không cấm đọc. `$p->x` vẫn là 4.",
       en: "`readonly` forbids writing after initialisation, not reading. `$p->x` is still 4.",
     },
   }),
   q({
-    id: "q16-asynchronous-operations",
+    id: "await-unwraps",
     chapter: "asynchronous-operations",
     lesson: "hack/asynchronous-operations/introduction",
     kind: "predict",
@@ -1034,15 +1034,15 @@ async function main(): Awaitable<void> {
   $v = await answer();
   echo $v;
 }`,
-    options: ["42","Awaitable<int>","0","Lỗi: thiếu await"],
-    answer: 0,
+    options: ["Awaitable<int>","42","Lỗi: thiếu await","0"],
+    answer: 1,
     explanation: {
       vi: "`async` bọc kết quả trong `Awaitable`; `await` mở nó ra, nên `$v` là `int` 42.",
       en: "`async` wraps the result in an `Awaitable`; `await` unwraps it, so `$v` is the `int` 42.",
     },
   }),
   q({
-    id: "q17-statements",
+    id: "finally-runs",
     chapter: "statements",
     lesson: "hack/statements/try",
     kind: "predict",
@@ -1056,29 +1056,29 @@ function main(): void {
     echo "b";
   }
 }`,
-    options: ["ab","a","b","Lỗi: thiếu catch"],
-    answer: 0,
+    options: ["b","a","ab","Lỗi: thiếu catch"],
+    answer: 2,
     explanation: {
       vi: "`finally` chạy sau `try`, dù có lỗi hay không; không bắt buộc phải có `catch`.",
       en: "`finally` runs after `try` whether or not anything was thrown; a `catch` is not required.",
     },
   }),
   q({
-    id: "q18-",
+    id: "xhp-purpose",
     chapter: "XHP",
     lesson: "hack/XHP/introduction",
     kind: "concept",
     level: 3,
     text: { vi: "XHP giải quyết vấn đề gì?", en: "What problem does XHP solve?" },
-    options: ["Dựng HTML bằng cú pháp XML có kiểm tra kiểu, thay vì nối chuỗi","Tăng tốc độ mạng","Quản lý gói Composer","Thay thế `async`"],
-    answer: 0,
+    options: ["Thay thế `async`","Dựng HTML bằng cú pháp XML có kiểm tra kiểu, thay vì nối chuỗi","Quản lý gói Composer","Tăng tốc độ mạng"],
+    answer: 1,
     explanation: {
       vi: "XHP cho phép viết thẻ như `<a href=\"…\">` ngay trong Hack; tag sai tên hoặc thiếu thuộc tính bắt được lúc chạy và lúc kiểm tra kiểu, thay vì lọt qua phép nối chuỗi.",
       en: "XHP lets you write tags such as `<a href=\"…\">` in Hack; wrong tags or missing attributes are caught by the typechecker and at runtime instead of slipping through string concatenation.",
     },
   }),
   q({
-    id: "q19-basic-usage",
+    id: "server-mode",
     chapter: "basic-usage",
     lesson: "hhvm/basic-usage/server",
     kind: "concept",
@@ -1092,21 +1092,21 @@ function main(): void {
     },
   }),
   q({
-    id: "q20-configuration",
+    id: "ini-files",
     chapter: "configuration",
     lesson: "hhvm/configuration/introduction",
     kind: "concept",
     level: 2,
     text: { vi: "Tệp `.ini` của HHVM dùng để làm gì?", en: "What is an HHVM `.ini` file for?" },
-    options: ["Đặt cấu hình cho runtime, đọc lúc khởi động","Chứa mã nguồn Hack","Khai báo dependency Composer","Mô tả route của Proxygen"],
-    answer: 0,
+    options: ["Khai báo dependency Composer","Đặt cấu hình cho runtime, đọc lúc khởi động","Chứa mã nguồn Hack","Mô tả route của Proxygen"],
+    answer: 1,
     explanation: {
       vi: "`.ini` giữ các thiết lập như cổng, thư mục gốc, giới hạn bộ nhớ; HHVM đọc lúc khởi động và áp cho cả tiến trình.",
       en: "`.ini` files hold settings such as the port, document root and memory limits; HHVM reads them at startup and applies them to the process.",
     },
   }),
   q({
-    id: "q21-expressions-and-operators",
+    id: "coalesce-null",
     chapter: "expressions-and-operators",
     lesson: "hack/expressions-and-operators/coalesce",
     kind: "predict",
@@ -1126,7 +1126,7 @@ function main(): void {
     },
   }),
   q({
-    id: "q22-expressions-and-operators",
+    id: "string-interpolation",
     chapter: "expressions-and-operators",
     lesson: "hack/expressions-and-operators/string-concatenation",
     kind: "predict",
@@ -1137,63 +1137,63 @@ function main(): void {
   $name = "Hack";
   echo "Hello, {$name}!";
 }`,
-    options: ["Hello, Hack!","Hello, {$name}!","Hello, !","Lỗi: { } trong chuỗi"],
-    answer: 0,
+    options: ["Hello, {$name}!","Lỗi: { } trong chuỗi","Hello, Hack!","Hello, !"],
+    answer: 2,
     explanation: {
       vi: "Trong chuỗi nháy kép, `{$name}` được thay bằng giá trị biến; cặp ngoặc nhọn giúp tách tên biến khỏi chữ xung quanh.",
       en: "Inside a double-quoted string `{$name}` is replaced by the variable's value; the braces separate the name from the surrounding text.",
     },
   }),
   q({
-    id: "q23-types",
+    id: "nullable-type",
     chapter: "types",
     lesson: "hack/types/nullable-types",
     kind: "concept",
     level: 2,
     text: { vi: "`?string` nghĩa là gì?", en: "What does `?string` mean?" },
-    options: ["`string` hoặc `null`","Chuỗi rỗng","Chuỗi tuỳ chọn khi gọi hàm","Bất kỳ kiểu nào"],
-    answer: 0,
+    options: ["Chuỗi rỗng","Chuỗi tuỳ chọn khi gọi hàm","Bất kỳ kiểu nào","`string` hoặc `null`"],
+    answer: 3,
     explanation: {
       vi: "Dấu `?` thêm `null` vào kiểu. Muốn dùng giá trị, phải kiểm tra `null` trước — hoặc dùng `??`.",
       en: "The `?` adds `null` to the type. Before using the value you must check for `null`, or use `??`.",
     },
   }),
   q({
-    id: "q24-types",
+    id: "newtype-vs-type",
     chapter: "types",
     lesson: "hack/types/type-aliases",
     kind: "concept",
     level: 2,
     text: { vi: "`newtype` khác `type` ở điểm nào?", en: "How does `newtype` differ from `type`?" },
-    options: ["`newtype` là kiểu riêng, không lẫn với kiểu gốc","`newtype` nhanh hơn","`type` chỉ dùng trong class","Không khác gì"],
-    answer: 0,
+    options: ["`newtype` nhanh hơn","`type` chỉ dùng trong class","`newtype` là kiểu riêng, không lẫn với kiểu gốc","Không khác gì"],
+    answer: 2,
     explanation: {
       vi: "`type` chỉ là tên gọi khác của kiểu gốc; `newtype` tạo kiểu mới mà typechecker không cho dùng thay thế lẫn nhau.",
       en: "`type` is just another name for the type; `newtype` creates a distinct type the typechecker will not mix with the original.",
     },
   }),
   q({
-    id: "q25-arrays-and-collections",
+    id: "vec-map",
     chapter: "arrays-and-collections",
     lesson: "hack/arrays-and-collections/vec-keyset-and-dict",
     kind: "predict",
     level: 1,
     text: { vi: "`Vec\\map` biến đổi `vec` thế nào?", en: "How does `Vec\\map` transform a `vec`?" },
     code: `<?hh
-use namespace HH\Lib\Vec;
+use namespace HH\\Lib\\Vec;
 function main(): void {
   $v = Vec\\map(vec[1, 2, 3], $x ==> $x * 2);
   echo implode(",", $v);
 }`,
-    options: ["2,4,6","1,2,3","2,2,2","Lỗi: map không nhận lambda"],
-    answer: 0,
+    options: ["2,2,2","1,2,3","Lỗi: map không nhận lambda","2,4,6"],
+    answer: 3,
     explanation: {
       vi: "`Vec\\map` trả về `vec` mới cùng độ dài, mỗi phần tử là kết quả của hàm — 1, 2, 3 thành 2, 4, 6.",
       en: "`Vec\\map` returns a new `vec` of the same length, each element the result of the callback: 1, 2, 3 becomes 2, 4, 6.",
     },
   }),
   q({
-    id: "q26-expressions-and-operators",
+    id: "pipe-operator",
     chapter: "expressions-and-operators",
     lesson: "hack/expressions-and-operators/pipe",
     kind: "predict",
@@ -1204,15 +1204,15 @@ function add1(int $x): int { return $x + 1; }
 function main(): void {
   echo 1 |> add1($$);
 }`,
-    options: ["2","1","Lỗi: $ không hợp lệ","add1"],
-    answer: 0,
+    options: ["Lỗi: $ không hợp lệ","2","add1","1"],
+    answer: 1,
     explanation: {
       vi: "`|>` đặt vế trái vào chỗ `$` của vế phải, nên `1 |> add1($)` chính là `add1(1)`.",
       en: "`|>` places the left side wherever `$` appears on the right, so `1 |> add1($)` is `add1(1)`.",
     },
   }),
   q({
-    id: "q27-expressions-and-operators",
+    id: "ternary-falsy",
     chapter: "expressions-and-operators",
     lesson: "hack/expressions-and-operators/ternary",
     kind: "predict",
@@ -1223,15 +1223,15 @@ function main(): void {
   $n = 0;
   echo $n ? "truthy" : "falsy";
 }`,
-    options: ["falsy","truthy","0","Lỗi: 0 không dùng làm điều kiện"],
-    answer: 0,
+    options: ["Lỗi: 0 không dùng làm điều kiện","0","truthy","falsy"],
+    answer: 3,
     explanation: {
       vi: "`0` là falsy trong Hack, nên biểu thức chọn nhánh sau dấu `:`.",
       en: "`0` is falsy in Hack, so the expression takes the branch after the `:`.",
     },
   }),
   q({
-    id: "q28-statements",
+    id: "catch-message",
     chapter: "statements",
     lesson: "hack/statements/try",
     kind: "predict",
@@ -1245,29 +1245,29 @@ function main(): void {
     echo "caught: " . $e->getMessage();
   }
 }`,
-    options: ["caught: boom","caught: ","boom","Lỗi: Exception không bắt được"],
-    answer: 0,
+    options: ["Lỗi: Exception không bắt được","boom","caught: ","caught: boom"],
+    answer: 3,
     explanation: {
       vi: "Đối tượng ngoại lệ được truyền vào biến `$e`; `getMessage()` trả lại chuỗi đã ném.",
       en: "The thrown object arrives in `$e`; `getMessage()` returns the string it was built with.",
     },
   }),
   q({
-    id: "q29-generics",
+    id: "generic-signature",
     chapter: "generics",
     lesson: "hack/generics/introduction",
     kind: "concept",
     level: 3,
     text: { vi: "Generic giúp gì cho người đọc chữ ký hàm?", en: "What do generics add to a function signature?" },
-    options: ["Nói rõ quan hệ giữa kiểu đầu vào và kiểu trả về","Làm code chạy nhanh hơn","Thay thế interface","Cho phép bỏ qua kiểm tra kiểu"],
-    answer: 0,
+    options: ["Làm code chạy nhanh hơn","Cho phép bỏ qua kiểm tra kiểu","Thay thế interface","Nói rõ quan hệ giữa kiểu đầu vào và kiểu trả về"],
+    answer: 3,
     explanation: {
       vi: "`function first<T>(vec<T> $v): ?T` nói rằng đầu vào và đầu ra cùng một kiểu `T`; nhờ vậy typechecker giữ được thông tin thay vì thu về `mixed`.",
       en: "`function first<T>(vec<T> $v): ?T` says input and output share the type `T`, so the typechecker keeps that information instead of collapsing to `mixed`.",
     },
   }),
   q({
-    id: "q30-",
+    id: "xhp-escaping",
     chapter: "XHP",
     lesson: "hack/XHP/introduction",
     kind: "concept",
@@ -1278,6 +1278,313 @@ function main(): void {
     explanation: {
       vi: "XHP biết đâu là text và đâu là thuộc tính, nên escape đúng chỗ và báo lỗi khi tag/thuộc tính không hợp lệ — nối chuỗi thì không có gì kiểm tra.",
       en: "XHP knows what is text and what is an attribute, escapes each correctly, and rejects unknown tags or attributes; string concatenation checks nothing.",
+    },
+  }),
+  q({
+    id: "heredoc-interpolation",
+    chapter: "source-code-fundamentals",
+    lesson: "hack/source-code-fundamentals/literals",
+    kind: "predict",
+    level: 2,
+    text: { vi: "Heredoc nội suy biến thế nào?", en: "How does a heredoc interpolate a variable?" },
+    code: `<?hh
+function main(): void {
+  $v = 7;
+  echo <<<TXT
+value: $v
+TXT;
+}`,
+    options: ["value: 7","value: $v","value: ","Lỗi: heredoc không nội suy"],
+    answer: 0,
+    explanation: {
+      vi: "Heredoc (`<<<TXT`) hoạt động như chuỗi nháy kép: `$v` được thay bằng 7. Nowdoc (`<<<'TXT'`) mới giữ nguyên `$v`.",
+      en: "A heredoc (`<<<TXT`) behaves like a double-quoted string: `$v` becomes 7. A nowdoc (`<<<'TXT'`) would keep the literal `$v`.",
+    },
+  }),
+  q({
+    id: "shapes-sum",
+    chapter: "built-in-types",
+    lesson: "hack/built-in-types/shape",
+    kind: "predict",
+    level: 1,
+    text: { vi: "Shape truy cập trường thế nào?", en: "How do you read a shape field?" },
+    code: `<?hh
+function main(): void {
+  $p = shape("x" => 1, "y" => 2);
+  echo $p["x"] + $p["y"];
+}`,
+    options: ["12","Lỗi: shape không dùng [] được","3","0"],
+    answer: 2,
+    explanation: {
+      vi: "Shape là mảng có khoá cố định: `$p[\"x\"]` là 1, `$p[\"y\"]` là 2, tổng là 3.",
+      en: "A shape is an array with fixed keys: `$p[\"x\"]` is 1, `$p[\"y\"]` is 2, so the sum is 3.",
+    },
+  }),
+  q({
+    id: "enum-values",
+    chapter: "built-in-types",
+    lesson: "hack/built-in-types/enum",
+    kind: "predict",
+    level: 2,
+    text: { vi: "In một `enum` có giá trị cho ra gì?", en: "What does printing a backed enum give you?" },
+    code: `<?hh
+enum Color: string {
+  RED = "red";
+  BLUE = "blue";
+}
+function main(): void {
+  echo Color::BLUE;
+}`,
+    options: ["Color::BLUE","Lỗi: enum không in được","blue","BLUE"],
+    answer: 2,
+    explanation: {
+      vi: "Enum có giá trị (`: string`) in ra đúng giá trị đã khai báo, nên `Color::BLUE` là `blue`.",
+      en: "A backed enum (`: string`) prints the value it was declared with, so `Color::BLUE` is `blue`.",
+    },
+  }),
+  q({
+    id: "nullable-ternary",
+    chapter: "types",
+    lesson: "hack/types/nullable-types",
+    kind: "predict",
+    level: 2,
+    text: { vi: "Hàm xử lý `?string` in ra gì?", en: "What does this `?string` function print?" },
+    code: `<?hh
+function len(?string $s): int {
+  return $s === null ? 0 : strlen($s);
+}
+function main(): void {
+  echo len(null) . "," . len("abc");
+}`,
+    options: ["Lỗi: strlen(null)","0,3","3,0","0,0"],
+    answer: 1,
+    explanation: {
+      vi: "`len(null)` đi nhánh `0`, `len(\"abc\")` đếm được 3 ký tự. Kiểm tra `null` trước khi dùng là cách Hack buộc phải làm với `?T`.",
+      en: "`len(null)` takes the `0` branch, `len(\"abc\")` counts 3 characters. Checking for `null` before use is what Hack requires of `?T`.",
+    },
+  }),
+  q({
+    id: "named-arguments",
+    chapter: "functions",
+    lesson: "hack/functions/named-parameters",
+    kind: "predict",
+    level: 3,
+    text: { vi: "Đối số có tên thay đổi thứ tự tham số thế nào?", en: "How do named arguments change parameter order?" },
+    code: `<?hh
+function greet(string $name, string $greeting = "hi"): string {
+  return $greeting . " " . $name;
+}
+function main(): void {
+  echo greet(name: "kim", greeting: "yo");
+}`,
+    options: ["hi kim","yo kim","Lỗi: sai thứ tự tham số","kim yo"],
+    answer: 1,
+    explanation: {
+      vi: "Đối số có tên khớp theo tên tham số chứ không theo vị trí, nên `greeting: \"yo\"` vào đúng chỗ dù được viết sau.",
+      en: "Named arguments bind by parameter name, not by position, so `greeting: \"yo\"` lands in the right slot even though it comes second.",
+    },
+  }),
+  q({
+    id: "inout-write-back",
+    chapter: "functions",
+    lesson: "hack/functions/inout-parameters",
+    kind: "predict",
+    level: 3,
+    text: { vi: "`inout` cho hàm sửa biến của nơi gọi không?", en: "Does `inout` let a function change the caller's variable?" },
+    code: `<?hh
+function bump(inout int $n): void {
+  $n++;
+}
+function main(): void {
+  $x = 1;
+  bump(inout $x);
+  echo $x;
+}`,
+    options: ["0","Lỗi: inout cần biến hằng","2","1"],
+    answer: 2,
+    explanation: {
+      vi: "`inout` truyền tham chiếu tới biến của nơi gọi: `$n++` trong hàm làm `$x` thành 2. Nơi gọi cũng phải viết `inout`.",
+      en: "`inout` passes a reference to the caller's variable: `$n++` inside the function makes `$x` 2. The call site must write `inout` too.",
+    },
+  }),
+  q({
+    id: "match-arms",
+    chapter: "expressions-and-operators",
+    lesson: "hack/statements/switch",
+    kind: "predict",
+    level: 2,
+    text: { vi: "`match` chọn nhánh nào?", en: "Which arm does `match` pick?" },
+    code: `<?hh
+function size(int $n): string {
+  return match ($n) { 1, 2 => "small", default => "large" };
+}
+function main(): void {
+  echo size(1) . " " . size(5);
+}`,
+    options: ["small small","Lỗi: match cần break","large large","small large"],
+    answer: 3,
+    explanation: {
+      vi: "`match` lấy nhánh khớp đầu tiên và trả về giá trị của nó; một nhánh có thể nhận nhiều điều kiện (`1, 2`). Không có rơi nhánh như `switch`.",
+      en: "`match` takes the first matching arm and returns its value; one arm can list several conditions (`1, 2`). There is no fall-through like `switch`.",
+    },
+  }),
+  q({
+    id: "vec-map-hsl",
+    chapter: "arrays-and-collections",
+    lesson: "hack/arrays-and-collections/vec-keyset-and-dict",
+    kind: "predict",
+    level: 2,
+    text: { vi: "`Vec\\map` trả về gì?", en: "What does `Vec\\map` return?" },
+    code: `<?hh
+use namespace HH\\Lib\\Vec;
+function main(): void {
+  $v = Vec\\map(vec[1, 2, 3], $x ==> $x * 2);
+  echo implode(",", $v);
+}`,
+    options: ["2,4,6","1,2,3","2,2,2","Lỗi: map cần hai tham số"],
+    answer: 0,
+    explanation: {
+      vi: "`Vec\\map` trả về `vec` mới cùng độ dài, mỗi phần tử là kết quả của hàm: 1, 2, 3 thành 2, 4, 6.",
+      en: "`Vec\\map` returns a new `vec` of the same length, each element the callback's result: 1, 2, 3 becomes 2, 4, 6.",
+    },
+  }),
+  q({
+    id: "vec-reduce-hsl",
+    chapter: "arrays-and-collections",
+    lesson: "hack/arrays-and-collections/mutating-values",
+    kind: "predict",
+    level: 3,
+    text: { vi: "`Vec\\reduce` cộng dồn thế nào?", en: "How does `Vec\\reduce` accumulate?" },
+    code: `<?hh
+use namespace HH\\Lib\\Vec;
+function main(): void {
+  echo Vec\\reduce(vec[1, 2, 3], ($acc, $n) ==> $acc + $n, 0);
+}`,
+    options: ["6","3","0","Lỗi: reduce cần closure"],
+    answer: 0,
+    explanation: {
+      vi: "`reduce` bắt đầu từ 0, rồi cộng dồn từng phần tử: 0+1, 1+2, 3+3 = 6. Tham số là `($acc, $phần_tử)`.",
+      en: "`reduce` starts from 0 and folds each element in: 0+1, 1+2, 3+3 = 6. The callback takes `($acc, $element)`.",
+    },
+  }),
+  q({
+    id: "generator-values",
+    chapter: "expressions-and-operators",
+    lesson: "hack/expressions-and-operators/yield",
+    kind: "predict",
+    level: 3,
+    text: { vi: "Hàm `yield` cho ra gì khi duyệt?", en: "What does a yielding function produce when iterated?" },
+    code: `<?hh
+function squares(): Generator<int, int, void> {
+  foreach (vec[1, 2, 3] as $v) yield $v * $v;
+}
+function main(): void {
+  foreach (squares() as $s) echo $s . ",";
+}`,
+    options: ["9,4,1,","1,2,3,","Lỗi: Generator không duyệt được","1,4,9,"],
+    answer: 3,
+    explanation: {
+      vi: "`yield` đưa từng giá trị ra ngoài theo thứ tự; bình phương của 1, 2, 3 là 1, 4, 9.",
+      en: "`yield` hands values out one at a time, in order; the squares of 1, 2, 3 are 1, 4, 9.",
+    },
+  }),
+  q({
+    id: "vec-sort-returns",
+    chapter: "arrays-and-collections",
+    lesson: "hack/arrays-and-collections/mutating-values",
+    kind: "predict",
+    level: 3,
+    text: { vi: "`Vec\\sort` trả về gì?", en: "What does `Vec\\sort` return?" },
+    code: `<?hh
+use namespace HH\\Lib\\Vec;
+function main(): void {
+  $sorted = Vec\\sort(vec[3, 1, 2]);
+  echo implode(",", $sorted);
+}`,
+    options: ["1,2,3","3,1,2","","Lỗi: Vec\\sort sửa tại chỗ"],
+    answer: 0,
+    explanation: {
+      vi: "`Vec\\sort` không sửa `vec` gốc (`vec` là kiểu giá trị), nó trả về một `vec` mới đã sắp xếp.",
+      en: "`Vec\\sort` does not change the original `vec` (a `vec` is a value type); it returns a new, sorted one.",
+    },
+  }),
+  q({
+    id: "dict-get-default",
+    chapter: "arrays-and-collections",
+    lesson: "hack/arrays-and-collections/vec-keyset-and-dict",
+    kind: "predict",
+    level: 2,
+    text: { vi: "`Dict\\get` với khoá không có thì sao?", en: "What does `Dict\\get` do for a missing key?" },
+    code: `<?hh
+use namespace HH\\Lib\\Dict;
+function main(): void {
+  $d = dict["a" => 1];
+  echo Dict\\get($d, "b", 9);
+}`,
+    options: ["Lỗi: khoá không tồn tại","1","9","null"],
+    answer: 2,
+    explanation: {
+      vi: "`Dict\\get($d, $k, $default)` trả về giá trị mặc định khi khoá chưa có, thay vì ném lỗi như `$d[$k]`.",
+      en: "`Dict\\get($d, $k, $default)` returns the default when the key is absent, instead of throwing like `$d[$k]`.",
+    },
+  }),
+  q({
+    id: "float-division",
+    chapter: "expressions-and-operators",
+    lesson: "hack/expressions-and-operators/arithmetic",
+    kind: "predict",
+    level: 1,
+    text: { vi: "`/` với hai số nguyên cho kết quả gì?", en: "What does `/` give for two ints?" },
+    code: `<?hh
+function main(): void {
+  echo 7 / 2;
+}`,
+    options: ["4","3","Lỗi: chia không hết","3.5"],
+    answer: 3,
+    explanation: {
+      vi: "`/` trong Hack luôn trả về `float` khi không chia hết, nên 7/2 là 3.5. Muốn chia nguyên thì dùng `intdiv()`.",
+      en: "`/` in Hack returns a `float` when the division is not exact, so 7/2 is 3.5. For integer division use `intdiv()`.",
+    },
+  }),
+  q({
+    id: "cast-string-bool",
+    chapter: "expressions-and-operators",
+    lesson: "hack/expressions-and-operators/casting",
+    kind: "predict",
+    level: 3,
+    text: { vi: "Chuỗi `\"0\"` ép sang `bool` là gì?", en: "What is the string `\"0\"` cast to `bool`?" },
+    code: `<?hh
+function main(): void {
+  var_dump((bool) "0");
+}`,
+    options: ["Lỗi: không ép được","bool(true)","bool(\"0\")","bool(false)"],
+    answer: 3,
+    explanation: {
+      vi: "`\"0\"` là một trong số ít giá trị falsy của Hack (cùng với `0`, `0.0`, `\"\"`, `null`, mảng rỗng). `\"0.0\"` thì lại truthy.",
+      en: "`\"0\"` is one of Hack's few falsy values (with `0`, `0.0`, `\"\"`, `null`, and empty containers). `\"0.0\"` is truthy.",
+    },
+  }),
+  q({
+    id: "nested-foreach-sum",
+    chapter: "statements",
+    lesson: "hack/statements/foreach",
+    kind: "predict",
+    level: 2,
+    text: { vi: "Hai vòng `foreach` lồng nhau cộng được bao nhiêu?", en: "What do two nested `foreach` loops add up to?" },
+    code: `<?hh
+function main(): void {
+  $m = dict["a" => vec[1, 2], "b" => vec[3]];
+  $sum = 0;
+  foreach ($m as $row) {
+    foreach ($row as $n) $sum += $n;
+  }
+  echo $sum;
+}`,
+    options: ["5","3","6","Lỗi: dict chứa vec"],
+    answer: 2,
+    explanation: {
+      vi: "Vòng ngoài đi qua hai giá trị `vec[1, 2]` và `vec[3]`; vòng trong cộng từng số: 1+2+3 = 6.",
+      en: "The outer loop walks the two values `vec[1, 2]` and `vec[3]`; the inner one adds each number: 1+2+3 = 6.",
     },
   }),
 ];
