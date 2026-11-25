@@ -805,6 +805,7 @@ class Parser {
         break;
       }
       let type = null;
+      const inoutParam = this.atIdent("inout");
       this.accept("ident", "inout");
       if (this.token.type === "var") {
         // untyped
@@ -813,12 +814,12 @@ class Parser {
         this.skipType(true);
         type = this.tokens.slice(start, this.pos).map((t) => t.value).join("");
       }
-      if (this.accept("punct", "&")) {
-        // by-ref parameter: the slice above may have consumed it; handled below
-      }
-      if (this.atPunct("...")) {
-        this.next();
-      }
+      const byRef = this.accept("punct", "&") || this.tokens[this.pos - 1]?.value === "&";
+      // The type slice stops at the variable, so `int ...$ns` arrives as
+      // type "int..." and no separate `...` token is left to read.
+      const variadic = /\.\.\.$/.test(type || "");
+      if (variadic) type = type.slice(0, -3) || null;
+      if (this.atPunct("...")) this.next();
       if (this.token.type !== "var") {
         // Type was consumed and the next token is not a variable: tolerate.
         if (this.atPunct(",")) {
@@ -833,7 +834,8 @@ class Parser {
         // Skip the default without running it; defaults are evaluated separately.
         defaultValue = this.parseExpression();
       }
-      params.push({ name, type, defaultValue, variadic: false, byRef: false, promoted });
+      // `int ...$ns`: the type slice stops at `...`, so the flag is read here.
+      params.push({ name, type, defaultValue, variadic, byRef: byRef || inoutParam, promoted });
       if (!this.accept("punct", ",")) break;
     }
     this.expectPunct(")");
@@ -1305,6 +1307,9 @@ class Parser {
       this.next();
       return { type: "Await", value: this.parseUnary(), line: token.line };
     }
+    if (token.type === "ident" && token.value === "match") {
+      return this.parsePostfix(this.parseMatch());
+    }
     if (token.type === "ident" && token.value === "new") {
       return this.parsePostfix(this.parseNew());
     }
@@ -1330,6 +1335,38 @@ class Parser {
     return this.parsePostfix(this.parsePrimary());
   }
 
+  // `match ($x) { 1, 2 => "small", default => "big" }`: the first arm whose
+  // condition matches wins, and arms can list several conditions.
+  parseMatch() {
+    const line = this.token.line;
+    this.expectIdent("match");
+    this.expectPunct("(");
+    const subject = this.parseExpression();
+    this.expectPunct(")");
+    this.expectPunct("{");
+    const arms = [];
+    while (!this.atPunct("}")) {
+      const conditions = [];
+      let isDefault = false;
+      if (this.atIdent("default")) {
+        this.next();
+        isDefault = true;
+      } else {
+        conditions.push(this.parseExpression());
+        while (this.accept("punct", ",")) {
+          if (this.atPunct("=>")) break;
+          conditions.push(this.parseExpression());
+        }
+      }
+      this.expectPunct("=>");
+      const value = this.parseExpression();
+      arms.push({ conditions, isDefault, value });
+      if (!this.accept("punct", ",")) break;
+    }
+    this.expectPunct("}");
+    return { type: "Match", subject, arms, line };
+  }
+
   parseNew() {
     const line = this.token.line;
     this.expectIdent("new");
@@ -1353,6 +1390,10 @@ class Parser {
       if (this.atPunct("...")) {
         this.next();
         args.push({ spread: true, value: this.parseExpression() });
+      } else if (this.token.type === "ident" && this.token.value === "inout" && this.peek().type === "var") {
+        // `bump(inout $x)`: PHP-style by-reference call.
+        this.next();
+        args.push({ inout: true, value: this.parseExpression() });
       } else if (this.token.type === "ident" && this.peek().type === "punct" && this.peek().value === ":") {
         // Named argument: `foo(bar: 1)`
         const name = this.next().value;
@@ -1386,6 +1427,22 @@ class Parser {
     if (token.type === "punct") {
       if (token.value === "(") {
         this.next();
+        // `($a, $b) ==> expr`: a parenthesised parameter list, not a call.
+        if (this.token.type === "var" && this.peek().type === "punct" && [",", ")"].includes(this.peek().value)) {
+          const save = this.pos;
+          const params = [];
+          while (this.token.type === "var") {
+            params.push({ type: "Variable", name: this.next().value, line });
+            if (!this.accept("punct", ",")) break;
+          }
+          if (params.length && this.atPunct(")") && this.peek().value === "==>") {
+            this.next();
+            this.next();
+            const body = this.parseAssignment();
+            return { type: "ArrowFunction", params, body, line };
+          }
+          this.pos = save;
+        }
         const value = this.parseExpression();
         this.expectPunct(")");
         return value;
@@ -1423,9 +1480,12 @@ class Parser {
         case "shape":
           return this.parseShape();
         case "tuple":
-          if (this.peek().value === "(") break;
-          this.next();
-          return this.parseArrayLiteral("vec");
+          // `tuple(1, "a")` builds a vec that keeps its shape per index.
+          if (this.peek().value === "(") {
+            this.next();
+            return this.parseArrayLiteral("vec");
+          }
+          break;
         case "function": {
           this.next();
           const isAsync = false;
@@ -1622,6 +1682,15 @@ class HVec {
   }
 }
 
+// `inout` arguments are passed by reference. A box carries the value and the
+// place it came from, so the callee can write back when it returns.
+class HBox {
+  constructor(value, target) {
+    this.value = value;
+    this.target = target;
+  }
+}
+
 class HDict {
   constructor(entries = []) {
     // entries: array of [key, value]; keys are normalized
@@ -1815,6 +1884,18 @@ const toNum = (value) => {
   throw new HCatchable(`Object of class ${typeName(value)} could not be converted to number`, 0);
 };
 
+// A function that yields is a generator. The interpreter is not lazy: calling
+// one runs it to the end and collects what it yields, which is enough for the
+// `foreach (f() as $x)` shape every manual example uses.
+const containsYield = (node) => {
+  if (!node || typeof node !== "object") return false;
+  if (Array.isArray(node)) return node.some(containsYield);
+  if (node.type === "Yield") return true;
+  // `function` nested inside is its own generator, not this function's.
+  if (node.type === "FunctionDeclaration") return false;
+  return Object.values(node).some(containsYield);
+};
+
 const strictEquals = (a, b) => {
   if (typeof a === "number" && typeof b === "number") return a === b;
   if (typeof a === "string" && typeof b === "string") return a === b;
@@ -1866,6 +1947,7 @@ class Interpreter {
     this.pending = [];
     this.statics = new Map();
     this.pipelineValue = undefined;
+    this.yieldStack = [];
     this.currentObject = null;
     this.currentClass = null;
   }
@@ -1928,6 +2010,7 @@ class Interpreter {
   }
 
   declareFunction(decl) {
+    decl.isGenerator = containsYield(decl.body);
     const name = decl.name.toLowerCase();
     this.functions.set(name, decl);
     const simple = name.split("\\").pop();
@@ -2101,7 +2184,9 @@ class Interpreter {
         if (param.defaultValue) value = this.eval(param.defaultValue, this.globals, {});
         else this.fail(`Too few arguments for ${decl.name}()`, line);
       }
-      scope[param.name] = value;
+      // `inout int $n` receives the caller's box: reads and writes both go
+      // through it, so the caller sees the new value when the call returns.
+      scope[param.name] = param.byRef && value instanceof HBox ? value : value;
       argIndex += 1;
     }
     if (!decl.params.some((param) => param.variadic) && args.length > argIndex) {
@@ -2109,15 +2194,20 @@ class Interpreter {
     }
 
     this.depth += 1;
+    const yields = decl.isGenerator ? [] : null;
+    if (yields) this.yieldStack.push(yields);
     try {
       const result = this.execBlockBody(decl.body.body, scope);
       if (result instanceof ExitSignal) throw result;
       if (result === BREAK || result === CONTINUE) {
         this.fail(`Cannot break/continue outside a loop in ${decl.name}()`, line);
       }
+      this.drainBoxes(args);
+      if (yields) return new HVec(yields);
       if (result && result.signal === "return") return result.value;
       return result === undefined ? null : result;
     } finally {
+      if (yields) this.yieldStack.pop();
       this.depth -= 1;
     }
   }
@@ -2355,6 +2445,10 @@ class Interpreter {
           this.pipelineValue = value;
           return value;
         }
+        if (scope[target.name] instanceof HBox) {
+          scope[target.name].value = value;
+          return value;
+        }
         scope[target.name] = value;
         return value;
       case "Index":
@@ -2367,9 +2461,16 @@ class Interpreter {
         return value;
       }
       case "StaticProperty": {
-        const name = this.eval(target.className, scope, env);
-        const key = `${typeof name === "string" ? name : target.className.name}::${target.name}`;
-        this.statics.set(key, value);
+        // The class name is a name, not a value: `self::` and `parent::` must
+        // resolve against the running class instead of being looked up.
+        const raw = target.className.type === "Name" ? target.className.name : this.eval(target.className, scope, env);
+        const className =
+          raw === "self" || raw === "static"
+            ? this.currentClass
+            : raw === "parent"
+              ? this.findClass(this.currentClass || "")?.decl.parent || raw
+              : raw;
+        this.statics.set(`${className}::${target.name}`, value);
         return value;
       }
       case "ArrayLiteral": {
@@ -2492,7 +2593,7 @@ class Interpreter {
         return node.interp ? this.interpolate(node.raw, scope, env, node.line) : node.raw;
       case "Variable": {
         if (node.name === "$$") return this.pipelineValue;
-        if (node.name in scope) return scope[node.name];
+        if (node.name in scope) return scope[node.name] instanceof HBox ? scope[node.name].value : scope[node.name];
         if (node.name === "this") this.fail("$this is not available here", node.line);
         // Undefined variables are an error in Hack, unlike PHP.
         this.fail(`Undefined variable: $${node.name}`, node.line);
@@ -2549,6 +2650,15 @@ class Interpreter {
           default:
             return value;
         }
+      }
+      case "Match": {
+        const subject = this.eval(node.subject, scope, env);
+        for (const arm of node.arms) {
+          const hit = arm.isDefault || arm.conditions.some((condition) => strictEquals(subject, this.eval(condition, scope, env)));
+          if (hit) return this.eval(arm.value, scope, env);
+        }
+        this.fail("Unhandled match value", node.line);
+        return null;
       }
       case "Ternary": {
         const test = this.eval(node.test, scope, env);
@@ -2608,8 +2718,15 @@ class Interpreter {
       }
       case "Await":
         return this.eval(node.value, scope, env);
-      case "Yield":
-        return this.eval(node.value, scope, env);
+      case "Yield": {
+        const value = node.value === null ? null : this.eval(node.value, scope, env);
+        const collector = this.yieldStack[this.yieldStack.length - 1];
+        if (collector) {
+          collector.push(value);
+          return null;
+        }
+        return value;
+      }
       case "AsyncBlock":
         return this.execBlockBody(node.body.body, scope) ?? null;
       case "Ref":
@@ -2627,7 +2744,13 @@ class Interpreter {
         return current;
       }
       case "StaticName": {
-        const className = node.className.type === "Name" ? node.className.name : null;
+        let className = node.className.type === "Name" ? node.className.name : null;
+        // `self::`, `static::` and `parent::` resolve against the running class.
+        if (className === "self" || className === "static") className = this.currentClass;
+        else if (className === "parent") {
+          const here = this.findClass(this.currentClass || "");
+          className = here && here.decl.parent ? here.decl.parent : null;
+        }
         if (className) {
           if (this.enums.has(className)) {
             const enumValue = this.enums.get(className);
@@ -2681,7 +2804,9 @@ class Interpreter {
         return value instanceof HObject ? value.className : typeName(value);
       }
       case "StaticProperty": {
-        const className = node.className.type === "Name" ? node.className.name : null;
+        let className = node.className.type === "Name" ? node.className.name : null;
+        if (className === "self" || className === "static") className = this.currentClass;
+        else if (className === "parent") className = this.findClass(this.currentClass || "")?.decl.parent || null;
         const key = `${className}::${node.name}`;
         if (this.statics.has(key)) return this.statics.get(key);
         if (className) {
@@ -3133,6 +3258,13 @@ class Interpreter {
   evalArgs(args, scope, env, line) {
     const values = [];
     for (const arg of args) {
+      if (arg.inout) {
+        // Wrap the argument in a box tied to its variable, so a callee that
+        // declares `inout` can write back through it.
+        const value = this.eval(arg.value, scope, env);
+        values.push(new HBox(value, arg.value.type === "Variable" ? { scope, name: arg.value.name } : null));
+        continue;
+      }
       const value = this.eval(arg.value, scope, env);
       if (arg.spread) {
         values.push(...this.toItems(value));
@@ -3141,6 +3273,16 @@ class Interpreter {
       }
     }
     return values;
+  }
+
+  // After a call, push boxed values back into their variables.
+  drainBoxes(args) {
+    for (const value of args) {
+      if (!(value instanceof HBox) || !value.target) continue;
+      const { scope, name } = value.target;
+      if (scope[name] instanceof HBox) scope[name].value = value.value;
+      else scope[name] = value.value;
+    }
   }
 
   callStatic(cls, method, args, line) {
@@ -3262,6 +3404,12 @@ const BUILTIN_FUNCTIONS = {
   "hh\\var_dump": (rt, args) => {
     rt.write(args.map((value) => dump(value)).join(""));
     return null;
+  },
+  // `print_r` writes its value and returns the string, like PHP's with `true`.
+  print_r: (rt, args) => {
+    const text = args.length > 1 && toBool(args[1]) ? toStr(args[0]) : `${dump(args[0])}`;
+    rt.write(text);
+    return text;
   },
   "hh\\debug_backtrace": () => new HVec([]),
   "hh\\readline": () => "",
@@ -3403,10 +3551,10 @@ const BUILTIN_FUNCTIONS = {
   },
   "hh\\lib\\vec\\reverse": (rt, args) => new HVec([...rt.toItems(args[0])].reverse()),
   "hh\\lib\\vec\\sort": (rt, args) => {
+    // `Vec\sort($v)` still accepts the old in-place form, but modern Hack
+    // returns the sorted vec, which is what `$v |> Vec\sort($$)` relies on.
     if (isCollection(args[0])) {
-      const items = [...rt.toItems(args[0])].sort((a, b) => compareValues(a, b));
-      if (isVec(args[0])) args[0].items = items;
-      return null;
+      return new HVec([...rt.toItems(args[0])].sort((a, b) => compareValues(a, b)));
     }
     return new HVec(args);
   },
@@ -3462,7 +3610,10 @@ const BUILTIN_FUNCTIONS = {
   },
   "hh\\lib\\vec\\contains": (rt, args) => rt.toItems(args[0]).some((item) => looseEquals(item, args[1])),
   "hh\\lib\\vec\\reduce": (rt, args) => {
-    const [items, initial, fn] = args;
+    // HSL order is (items, callback, initial); the PHP-style `array_reduce`
+    // order is (items, initial, callback). Accept both.
+    const [items, second, third] = args;
+    const [fn, initial] = typeof second === "function" ? [second, third] : [third, second];
     let accumulator = initial;
     for (const item of rt.toItems(items)) accumulator = callValue(rt, fn, [accumulator, item], 0);
     return accumulator;

@@ -166,8 +166,7 @@ function main(): void {
 function main(): void {
   $p = shape('x' => 1, 'y' => 2);
   echo $p['x'] + $p['y'], "\\n";
-  $nums = vec[3, 1, 2];
-  Vec\\sort($nums);
+  $nums = Vec\\sort(vec[3, 1, 2]);
   echo implode(",", $nums), "\\n";
   $sorted = Vec\\map($nums, $n ==> $n * 10);
   echo implode(",", $sorted), "\\n";
@@ -217,6 +216,102 @@ function main(): void {
   while (true) {}
 }`,
     stop: /steps/,
+  },
+  {
+    name: "match expressions",
+    code: `<?hh
+function label(int $n): string {
+  return match ($n) { 1, 2 => "small", 3 => "medium", default => "large" };
+}
+
+function main(): void {
+  foreach (vec[1, 3, 9] as $n) {
+    echo label($n), " ";
+  }
+}`,
+    out: "small medium large ",
+  },
+  {
+    name: "two-parameter arrow functions",
+    code: `<?hh
+use namespace HH\\Lib\\Vec;
+
+function main(): void {
+  $f = ($a, $b) ==> $a * $b;
+  echo $f(3, 4), "\\n";
+  echo Vec\\reduce(vec[1, 2, 3], ($acc, $n) ==> $acc + $n, 0), "\\n";
+}`,
+    out: "12\n6\n",
+  },
+  {
+    name: "generators collected by foreach",
+    code: `<?hh
+function squares(): Generator<int, int, void> {
+  foreach (vec[1, 2, 3] as $v) {
+    yield $v * $v;
+  }
+}
+
+function main(): void {
+  foreach (squares() as $s) {
+    echo $s, ",";
+  }
+}`,
+    out: "1,4,9,",
+  },
+  {
+    name: "self and parent inside a class",
+    code: `<?hh
+class Counter {
+  const int STEP = 1;
+  public static int $n = 0;
+  public static function bump(): int {
+    self::$n = self::$n + self::STEP;
+    return self::$n;
+  }
+}
+
+class LoudCounter extends Counter {
+  public static function bump(): int {
+    return parent::bump() * 10;
+  }
+}
+
+function main(): void {
+  echo Counter::bump(), " ", LoudCounter::bump();
+}`,
+    out: "1 20",
+  },
+  {
+    name: "inout parameters write back",
+    code: `<?hh
+function bump(inout int $n): void {
+  $n++;
+}
+
+function main(): void {
+  $x = 1;
+  bump(inout $x);
+  bump(inout $x);
+  echo $x;
+}`,
+    out: "3",
+  },
+  {
+    name: "variadic parameters and tuples",
+    code: `<?hh
+function total(int ...$ns): int {
+  $sum = 0;
+  foreach ($ns as $n) $sum += $n;
+  return $sum;
+}
+
+function main(): void {
+  echo total(1, 2, 3), "\\n";
+  $t = tuple("a", 2);
+  echo $t[0], $t[1];
+}`,
+    out: "6\na2",
   },
   {
     name: "heredoc with space after <<<",
