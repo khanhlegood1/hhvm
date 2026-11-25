@@ -1900,6 +1900,30 @@ function main(): void {
     answer: 3,
     explanation: {"vi":"Nội dung chia làm ba phần: **Hack** (ngôn ngữ), **HHVM** (hướng dẫn sử dụng HHVM) và **Contributing** (cách đóng góp cho chính trang tài liệu).","en":"Content is split into **Hack** (the language), **HHVM** (the user guide) and **Contributing** (how to contribute to the documentation site itself)."},
   }),
+  q({
+    id: "class-constant-value",
+    chapter: "classes",
+    lesson: "hack/classes/constants",
+    kind: "predict",
+    level: 2,
+    text: {"vi":"Hằng của lớp giữ đúng giá trị của nó. Đoạn này in gì?","en":"A class constant keeps its value. What does this print?"},
+    code: "<?hh\nclass Circle {\n  const float PI = 3.14;\n  public function __construct(private float $r) {}\n  public function area(): float {\n    return self::PI * $this->r * $this->r;\n  }\n}\nfunction main(): void {\n  echo (new Circle(2.0))->area();\n}",
+    options: ["4","1","12.56","Lỗi: không đọc được hằng của lớp"],
+    answer: 2,
+    explanation: {"vi":"`const float PI = 3.14` là hằng của lớp, đọc bằng `self::PI` từ bên trong hoặc `Circle::PI` từ bên ngoài; 3.14 × 2 × 2 = 12.56.","en":"`const float PI = 3.14` is a class constant, read with `self::PI` inside the class or `Circle::PI` outside; 3.14 × 2 × 2 is 12.56."},
+  }),
+  q({
+    id: "class-constant-inherited",
+    chapter: "classes",
+    lesson: "hack/classes/constants",
+    kind: "predict",
+    level: 2,
+    text: {"vi":"Lớp con thừa hưởng hằng của lớp cha. Đoạn này in gì?","en":"A subclass inherits its parent's constants. What does this print?"},
+    code: "<?hh\nclass Shape {\n  const string NAME = \"shape\";\n}\nclass Square extends Shape {}\nfunction main(): void {\n  echo Square::NAME;\n}",
+    options: ["","Square","Lỗi: `Square` không khai báo `NAME`","shape"],
+    answer: 3,
+    explanation: {"vi":"Hằng được tra theo cả chuỗi kế thừa, nên `Square::NAME` tìm thấy `Shape::NAME` và in `shape`. Muốn đổi thì lớp con khai báo lại cùng tên.","en":"Constants are looked up along the inheritance chain, so `Square::NAME` finds `Shape::NAME` and prints `shape`. A subclass that declares the same name overrides it."},
+  }),
 ];
 
 export const EXAM_KINDS = ["concept", "predict", "fill"];

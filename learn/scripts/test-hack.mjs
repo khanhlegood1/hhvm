@@ -239,6 +239,33 @@ function main(): void {
     out: "2/3\n2\n1/2",
   },
   {
+    name: "class constants hold their values",
+    code: `<?hh
+class Circle {
+  const float PI = 3.14;
+  const int SIDES = 0;
+  public function __construct(private float $r) {}
+  public function area(): float {
+    return self::PI * $this->r * $this->r;
+  }
+  public function sides(): int {
+    return self::SIDES;
+  }
+}
+
+class Parent_ {
+  const string NAME = "parent";
+}
+
+class Child extends Parent_ {}
+
+function main(): void {
+  $c = new Circle(1.0);
+  echo $c->area(), "/", $c->sides(), "/", Child::NAME;
+}`,
+    out: "3.14/0/parent",
+  },
+  {
     name: "match expressions",
     code: `<?hh
 function label(int $n): string {

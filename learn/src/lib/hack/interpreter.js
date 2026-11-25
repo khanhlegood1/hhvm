@@ -2092,10 +2092,8 @@ class Interpreter {
     this.classes.set(decl.name, cls);
     // Register before using so that a method calling another method of the
     // same class finds the object's class while the declaration is read.
-
-    for (const constant of decl.constants) {
-      this.constants.set(`${decl.name}::${constant.name}`, true);
-    }
+    // Class constants are *not* cached here: their values are expressions that
+    // are evaluated when they are read, and caching `true` would hide them.
   }
 
   declareEnum(decl) {
