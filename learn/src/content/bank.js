@@ -159,7 +159,7 @@ function main(): void {
   }),
   q({
     id: "dict-missing-key",
-    chapter: "arrays-and-collections",
+    chapter: "expressions-and-operators",
     lesson: "hack/expressions-and-operators/coalesce",
     kind: "predict",
     level: 2,
@@ -1408,7 +1408,7 @@ function main(): void {
   }),
   q({
     id: "match-arms",
-    chapter: "expressions-and-operators",
+    chapter: "statements",
     lesson: "hack/statements/switch",
     kind: "predict",
     level: 2,

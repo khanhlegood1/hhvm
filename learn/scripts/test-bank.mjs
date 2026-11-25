@@ -31,6 +31,10 @@ const codeFor = (question, optionIndex) =>
 for (const question of BANK) {
   if (!manual.lessons[question.lesson]) {
     fail(question.id, `lesson ${question.lesson} is not in the manual index`);
+  } else if (manual.lessons[question.lesson].chapter !== question.chapter) {
+    // A wrong answer offers "open the lesson"; it has to be in the chapter the
+    // question claims, or the link leads somewhere that does not explain it.
+    fail(question.id, `lesson ${question.lesson} belongs to ${manual.lessons[question.lesson].chapter}, not ${question.chapter}`);
   }
   if (!question.options || question.options.length < 2) {
     fail(question.id, "needs at least two options");
