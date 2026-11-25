@@ -1,43 +1,90 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+# Build the learning site in learn/ and publish it to GitHub Pages.
+#
+# The site is generated from the manual that lives in this repository
+# (hphp/hack/manual), so the build runs here rather than uploading the
+# repository as-is: that would publish the HHVM sources instead of the site.
+name: Deploy site to GitHub Pages
 
 on:
-  # Runs on pushes targeting the default branch
   push:
     branches: ["master"]
-
-  # Allows you to run this workflow manually from the Actions tab
+  # Allows the workflow to be run by hand from the Actions tab.
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+# Permissions the GITHUB_TOKEN needs for a Pages deployment.
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# One deployment at a time. Queued runs wait for the running one instead of
+# cancelling it, so a production deployment is never left half-finished.
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: learn
+    steps:
+      # The site needs learn/ and the manual it is generated from; the rest of
+      # the HHVM tree (build files, tests, third-party sources) is dead weight
+      # for a Pages build, so only those two paths are fetched.
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            learn
+            hphp/hack/manual
+          sparse-checkout-cone-mode: false
+
+      # Reads the site URL Pages will serve from, and fails early (before the
+      # build) if Pages is not enabled. Its `base_path` output is `/hhvm` for
+      # this repository, and empty when a custom domain sits at the root.
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: learn/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `npm run build` runs `prebuild` first: content is regenerated from the
+      # manual, then the interpreter, exam bank, Run buttons, every view and the
+      # DOM smoke test are checked. A broken page fails the deployment here.
+      - name: Build the site
+        run: npm run build
+        env:
+          # Pages serves this repository from https://<user>.github.io/hhvm/,
+          # so assets must be requested from that subpath. `base_path` comes
+          # from Pages itself, so a renamed repository or a custom domain does
+          # not need this file edited.
+          VITE_BASE: ${{ steps.pages.outputs.base_path }}/
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: learn/dist
+          # The artifact step skips dot-files by default, which would drop
+          # public/.nojekyll and let Pages run Jekyll over the bundle.
+          include-hidden-files: true
+
   deploy:
+    needs: build
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          # Upload entire repository
-          path: '.'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

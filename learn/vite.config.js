@@ -5,7 +5,10 @@ import react from "@vitejs/plugin-react";
 // /hhvm/. Local builds keep relative asset paths.
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const base = env.VITE_BASE || "./";
+  // A bare "/" (a custom domain served from the site root) means "no subpath":
+  // keep the relative default so the same dist/ also works from a subdirectory.
+  const requested = env.VITE_BASE;
+  const base = requested && requested !== "/" ? requested : "./";
 
   return {
     plugins: [react()],
