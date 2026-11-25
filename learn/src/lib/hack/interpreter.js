@@ -902,17 +902,30 @@ class Parser {
     const line = this.token.line;
     const kind = this.next().value; // class | interface | trait
     const name = this.next().value;
+    // Type parameters are a typechecker affair: `class Box<T>` runs as `Box`.
+    if (this.atPunct("<")) this.skipType(false);
     let parent = null;
     const interfaces = [];
     if (this.accept("ident", "extends")) {
       parent = this.next().value;
+      while (this.atPunct("\\")) {
+        this.next();
+        parent += `\\${this.next().value}`;
+      }
+      if (this.atPunct("<")) this.skipType(false);
       if (kind !== "class") {
         while (this.accept("punct", ",")) interfaces.push(this.next().value);
       }
     }
     if (this.accept("ident", "implements")) {
       do {
-        interfaces.push(this.next().value);
+        let target = this.next().value;
+        while (this.atPunct("\\")) {
+          this.next();
+          target += `\\${this.next().value}`;
+        }
+        if (this.atPunct("<")) this.skipType(false);
+        interfaces.push(target);
       } while (this.accept("punct", ","));
     }
     this.expectPunct("{");
@@ -1610,6 +1623,45 @@ class Parser {
     return { type: "ListPattern", items, line };
   }
 
+  // Look ahead over `<int, string>`-shaped text and report whether `(` follows.
+  typeArgsAhead() {
+    let depth = 0;
+    let index = this.pos;
+    while (index < this.tokens.length) {
+      const token = this.tokens[index];
+      if (token.type === "eof") return false;
+      if (token.type === "punct") {
+        if (token.value === "<") depth += 1;
+        else if (token.value === ">") {
+          depth -= 1;
+          if (depth === 0) {
+            const after = this.tokens[index + 1];
+            return Boolean(after && after.type === "punct" && after.value === "(");
+          }
+        } else if (token.value === ">>") {
+          depth -= 2;
+          if (depth <= 0) {
+            const after = this.tokens[index + 1];
+            return Boolean(after && after.type === "punct" && after.value === "(");
+          }
+        } else if (!["?", "\\", "::", "[", "]", "(", ")", ","].includes(token.value)) return false;
+      } else if (token.type !== "ident") return false;
+      index += 1;
+    }
+    return false;
+  }
+
+  // Consumes `<...>`; the caller has checked that `(` follows.
+  skipTypeArgs() {
+    let depth = 0;
+    do {
+      const token = this.next();
+      if (token.type === "punct" && token.value === "<") depth += 1;
+      if (token.type === "punct" && token.value === ">") depth -= 1;
+      if (token.type === "punct" && token.value === ">>") depth -= 2;
+    } while (depth > 0 && !this.at("eof"));
+  }
+
   parsePostfix(expression) {
     let value = expression;
     for (;;) {
@@ -1634,6 +1686,13 @@ class Parser {
         } else {
           value = { type: "StaticName", className: value, name: String(member.value), line: token.line };
         }
+        continue;
+      }
+      // Explicit type arguments at a call site: `f<int>(1)`,
+      // `HH\FIXME\UNSAFE_CAST<string, int>($x)`. Only taken when the `<...>`
+      // is followed by `(`, so `$a < $b` is left to the comparison operators.
+      if (token.value === "<" && value.type === "Name" && this.typeArgsAhead()) {
+        this.skipTypeArgs();
         continue;
       }
       if (token.value === "(") {
@@ -3643,19 +3702,24 @@ const BUILTIN_FUNCTIONS = {
     return new HVec(out);
   },
   "hh\\lib\\vec\\fill": (rt, args) => new HVec(Array(Math.max(0, Math.trunc(toNum(args[1])))).fill(args[0])),
+  // `HH\FIXME\UNSAFE_CAST<From, To>(e)` only speaks to the typechecker: it hands
+  // the value through untouched, which is what the manual says it does.
+  "hh\\fixme\\unsafe_cast": (rt, args) => args[0],
   "hh\\lib\\dict\\map": (rt, args) => {
     const [items, fn] = args;
     const pairs = isDict(items) ? items.entries() : rt.toItems(items).map((item, index) => [index, item]);
     return new HDict(pairs.map(([key, value]) => [key, callKeyed(rt, fn, value, key)]));
   },
+  // `Dict\map_with_key($d, ($key, $value) ==> ...)` keeps the keys and replaces
+  // the values; the callback is told the key first.
   "hh\\lib\\dict\\map_with_key": (rt, args) => {
     const [items, fn] = args;
     const pairs = isDict(items) ? items.entries() : rt.toItems(items).map((item, index) => [index, item]);
-    return new HDict(pairs.map(([key, value]) => {
-      const pair = callValue(rt, fn, [[key, value], key], 0);
-      const [newKey, newValue] = rt.toItems(pair);
-      return [newKey, newValue];
-    }));
+    return new HDict(pairs.map(([key, value]) => [key, callValue(rt, fn, [key, value], 0)]));
+  },
+  "hh\\lib\\vec\\map_with_key": (rt, args) => {
+    const [items, fn] = args;
+    return new HVec(rt.toItems(items).map((value, index) => callValue(rt, fn, [index, value], 0)));
   },
   "hh\\lib\\dict\\filter": (rt, args) => {
     const [items, fn] = args;
@@ -3767,8 +3831,31 @@ for (const [name, fn] of Object.entries(BUILTIN_FUNCTIONS)) {
   NORMALIZED_FUNCTIONS[name.split(/[\\/]+/).filter(Boolean).join(BS).toLowerCase()] = fn;
 }
 
+// The SPL exception classes show up in the manual's error-handling pages, so
+// they are constructible and catchable like `Exception` is.
+const SPL_EXCEPTIONS = [
+  "InvalidArgumentException",
+  "LogicException",
+  "RuntimeException",
+  "OutOfRangeException",
+  "OutOfBoundsException",
+  "DomainException",
+  "LengthException",
+  "RangeException",
+  "OverflowException",
+  "UnderflowException",
+  "UnexpectedValueException",
+  "BadMethodCallException",
+  "BadFunctionCallException",
+  "TypeError",
+];
+
 const BUILTIN_CLASSES = {
   exception: (rt, args) => new HCatchable(toStr(args[0] ?? ""), 0, "Exception"),
+  throwable: (rt, args) => new HCatchable(toStr(args[0] ?? ""), 0, "Throwable"),
+  ...Object.fromEntries(
+    SPL_EXCEPTIONS.map((name) => [name.toLowerCase(), (rt, args) => new HCatchable(toStr(args[0] ?? ""), 0, name)]),
+  ),
   "hh\\exception": (rt, args) => new HCatchable(toStr(args[0] ?? ""), 0, "Exception"),
   "hh\\invariantexception": (rt, args) => new HCatchable(toStr(args[0] ?? ""), 0, "InvariantException"),
   "hh\\lib\\io\\requestoutput": () => new RequestOutput(),

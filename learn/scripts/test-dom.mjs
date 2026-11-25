@@ -234,6 +234,33 @@ else {
   }
 }
 
+// The full paper is the whole bank: it must actually carry every question and
+// every question's lesson link must open the manual page it came from.
+// Leave the finished paper first: the hash was already #/exam, so going there
+// again would not remount the view.
+await go("#/library");
+await wait(30);
+await go("#/exam");
+await wait(60);
+// The button says only "Bắt đầu"/"Start"; the card heading says which paper.
+const fullCard = all(".card").find((card) => /đầy đủ|full exam/i.test(card.textContent));
+const fullStart = fullCard ? fullCard.querySelector("button") : null;
+if (!fullStart) fail("exam: no full-exam button");
+else {
+  await click(fullStart);
+  const tocCount = all(".toc button").length;
+  const { BANK } = await import("../src/content/bank.js");
+  if (tocCount !== BANK.length) fail(`exam: full paper has ${tocCount} questions, the bank has ${BANK.length}`);
+  else ok(`exam: full paper carries all ${BANK.length} questions`);
+  const wrongLink = all(".toc button")[0];
+  if (wrongLink) {
+    await click(wrongLink);
+    await wait(20);
+    if (all(".option").length < 2) fail("exam: a bank question rendered without options");
+    else ok("exam: bank question renders with its options");
+  }
+}
+
 // A chapter paper from a URL is built on mount, with the chapter in the title.
 await go("#/exam/chapter/types");
 await wait(120);
