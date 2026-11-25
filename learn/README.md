@@ -43,14 +43,24 @@ through the interpreter and checks its answer and explanation against the
 manual. `npm run check` runs all three; `prebuild` runs them before every build,
 so `npm run build` cannot ship a broken step.
 
-## Deploying under a path (GitHub Pages)
+## Deploying to GitHub Pages
 
-The site is a single page with hash routes, so it needs no server rewrites:
+`.github/workflows/static.yml` builds this site and publishes `learn/dist` to
+<https://khanhlegood1.github.io/hhvm/> on every push to `master`; it can also be
+started by hand from the Actions tab. The workflow checks out only `learn` and
+`hphp/hack/manual`, runs `npm ci` and then `npm run build` — which runs the
+whole check suite first, so a broken page fails the deployment instead of
+being published.
+
+The asset base path comes from `actions/configure-pages` (`base_path`, `/hhvm`
+here), so renaming the repository or attaching a custom domain does not need
+the workflow edited. To build the same thing locally:
 
 ```bash
 VITE_BASE=/hhvm/ npm run build
 ```
 
-`public/.nojekyll` is already in place for Pages. Assets are otherwise emitted
-with relative paths, so the same `dist/` also works from a subdirectory of any
-static host.
+The site is a single page with hash routes, so it needs no server rewrites, and
+`public/.nojekyll` keeps Pages from running Jekyll over the output. When
+`VITE_BASE` is unset (or `/`), assets are emitted with relative paths, so the
+same `dist/` also works from a subdirectory of any static host.
